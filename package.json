@@ -1,6 +1,6 @@
 {
   "name": "flexo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Javascript general-purpose library (used by Bender a.o.)",
   "main": "flexo.js",
   "scripts": {
