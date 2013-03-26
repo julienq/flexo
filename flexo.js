@@ -1,15 +1,19 @@
 (function (flexo) {
   "use strict";
 
-  var A = Array.prototype;
+  var foreach = Array.prototype.forEach;
+  var map = Array.prototype.map;
+  var slice = Array.prototype.slice;
+  var splice = Array.prototype.splice;
+
   var browser = typeof window === "object";
 
   if (typeof Function.prototype.bind !== "function") {
     Function.prototype.bind = function (x) {
       var f = this;
-      var args = A.slice.call(arguments, 1);
+      var args = slice.call(arguments, 1);
       return function () {
-        return f.apply(x, args.concat(A.slice.call(arguments)));
+        return f.apply(x, args.concat(slice.call(arguments)));
       };
     };
     Function.prototype.bind.native = false;
@@ -165,11 +169,11 @@
 
   flexo.extract_from_array = function (array, p, that) {
     var extracted = [];
-    var original = A.slice.call(array);
+    var original = slice.call(array);
     for (var i = array.length - 1; i >= 0; --i) {
       if (p.call(that, array[i], i, original)) {
         extracted.unshift(array[i]);
-        A.splice.call(array, i, 1);
+        splice.call(array, i, 1);
       }
     }
     return extracted;
@@ -178,7 +182,7 @@
   // Drop elements of an array while the predicate is true
   flexo.drop_while = function (a, p, that) {
     for (var i = 0, n = a.length; i < n && p.call(that, a[i], i, a); ++i);
-    return A.slice.call(a, i);
+    return slice.call(a, i);
   };
 
   // Find the first item x in a such that p(x) is true
@@ -228,9 +232,10 @@
     }
   };
 
-  // Shuffle the array
+  // Shuffle the array into a new array (the original array is not changed and
+  // the new, shuffled array is returned.)
   flexo.shuffle_array = function (array) {
-    var shuffled = A.slice.call(array);
+    var shuffled = slice.call(array);
     for (var i = shuffled.length - 1; i > 0; --i) {
       var j = flexo.random_int(i);
       var x = shuffled[i];
@@ -501,7 +506,7 @@
   // TODO handle encoding (at least of attribute values)
   flexo.html_tag = function (tag) {
     var out = "<" + tag;
-    var contents = A.slice.call(arguments, 1);
+    var contents = slice.call(arguments, 1);
     if (typeof contents[0] === "object" && !Array.isArray(contents[0])) {
       var attrs = contents.shift();
       for (var a in attrs) {
@@ -570,9 +575,9 @@
     var contents;
     if (typeof attrs === "object" && !(attrs instanceof Node) &&
         !Array.isArray(attrs)) {
-      contents = A.slice.call(arguments, 2);
+      contents = slice.call(arguments, 2);
     } else {
-      contents = A.slice.call(arguments, 1);
+      contents = slice.call(arguments, 1);
       attrs = {};
     }
     var classes = name.trim().split(".").map(function (x) {
@@ -678,7 +683,7 @@
     // Shorthand to create a document fragment
     flexo.$$ = function () {
       var fragment = window.document.createDocumentFragment();
-      A.forEach.call(arguments, function (ch) {
+      foreach.call(arguments, function (ch) {
         flexo.append_child(fragment, ch);
       });
       return fragment;
@@ -783,7 +788,7 @@
 
   // Convert an RGB color (3 values in the [0, 256[ interval) to a hex value
   flexo.rgb_to_hex = function() {
-    return "#" + A.map.call(arguments,
+    return "#" + map.call(arguments,
       function (x) {
         return flexo.pad(flexo.clamp(Math.floor(x), 0, 255).toString(16), 2);
       }).join("");
@@ -825,6 +830,22 @@
     return degrees * Math.PI / 180;
   };
 
+  // Make a list of points for a regular polygon with `sides` sides (should be
+  // at least 3) inscribed in a circle of radius `r`. The first point is at
+  // angle `phase`, which defaults to 0. The center of the circle may be set
+  // with `x` and `y` (both default to 0.)
+  flexo.poly_points = function (sides, r, phase, x, y) {
+    phase = phase || 0;
+    x = x || 0;
+    y = y || 0;
+    var points = [];
+    for (var i = 0, ph = 2 * Math.PI / sides; i < sides; ++i) {
+      points.push(x + r * Math.cos(phase + ph * i));
+      points.push(y - r * Math.sin(phase + ph * i));
+    }
+    return points.join(" ");
+  };
+
   // Create a regular polygon with the `sides` sides (should be at least 3),
   // inscribed in a circle of radius `r`, with an optional starting phase
   // (in degrees)
@@ -839,12 +860,7 @@
     delete attrs.phase;
     delete attrs.x;
     delete attrs.y;
-    var points = [];
-    for (var i = 0, ph = 2 * Math.PI / sides; i < sides; ++i) {
-      points.push(x + r * Math.cos(phase + ph * i));
-      points.push(y - r * Math.sin(phase + ph * i));
-    }
-    attrs.points = points.join(" ");
+    attrs.points = flexo.poly_points(sides, r, phase, x, y);
     return flexo.$polygon.apply(this, arguments);
   };
 
