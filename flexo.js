@@ -396,26 +396,31 @@
 
   // Custom events
 
+  function call_listener(listener, e) {
+    if (typeof listener.handleEvent === "function") {
+      listener.handleEvent.call(listener, e);
+    } else {
+      listener(e);
+    }
+  }
+
   // Listen to a custom event. Listener is a function or an object whose
-  // "handleEvent" function will then be invoked.
+  // "handleEvent" function will then be invoked. The listener is returned.
   flexo.listen = function (target, type, listener) {
     if (!(target.hasOwnProperty(type))) {
       target[type] = [];
     }
     target[type].push(listener);
+    return listener;
   };
 
-  // Listen to an event only once
+  // Listen to an event only once. The listener is returned.
   flexo.listen_once = function (target, type, listener) {
     var h = function (e) {
       flexo.unlisten(target, type, h);
-      if (typeof listener.handleEvent === "function") {
-        listener.handleEvent.call(listener, e);
-      } else {
-        listener(e);
-      }
+      call_listener(listener, e);
     };
-    flexo.listen(target, type, h);
+    return flexo.listen(target, type, h);
   };
 
   // Can be called as notify(e), notify(source, type) or notify(source, type, e)
@@ -430,18 +435,15 @@
     }
     if (e.source.hasOwnProperty(e.type)) {
       e.source[e.type].slice().forEach(function (listener) {
-        if (typeof listener.handleEvent === "function") {
-          listener.handleEvent.call(listener, e);
-        } else {
-          listener(e);
-        }
+        call_listener(listener, e);
       });
     }
   };
 
-  // Stop listening
+  // Stop listening and return the removed listener. If the listener was not set
+  // in the first place, do and return nothing.
   flexo.unlisten = function (target, type, listener) {
-    flexo.remove_from_array(target[type], listener);
+    return flexo.remove_from_array(target[type], listener);
   };
 
 
