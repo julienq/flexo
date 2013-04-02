@@ -449,6 +449,10 @@
 
   // Functions and Asynchronicity
 
+  // No-op function, returns nothing
+  flexo.nop = function () {
+  };
+
   // Identity function
   flexo.id = function (x) {
     return x;
