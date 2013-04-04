@@ -245,6 +245,13 @@
     return shuffled;
   };
 
+  // Return all the values of an object (presumably used as a dictionary)
+  flexo.values = function (object) {
+    return Object.keys(object).map(function (key) {
+      return object[key];
+    });
+  };
+
 
   // URIs: parsing and resolving relative URIs (e.g. to load resources)
 

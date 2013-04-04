@@ -329,6 +329,13 @@
     describe("flexo.replace_in_array(array, old_item, new_item)", function () {
       it("replaces the first instance of old_item in the array with new_item, and return old_item if it was present");
     });
+
+    describe("flexo.values(dictionary)", function () {
+      it("returns the values of a dictionary-like object (in some order)", function () {
+        var dict = { foo: 1, bar: 2, fum: 3, quux: 4, quuux: 4, baz: 2 };
+        assert.deepEqual(flexo.values(dict).sort(), [1, 2, 2, 3, 4, 4]);
+      });
+    });
   });
 
 
