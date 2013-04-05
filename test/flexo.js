@@ -625,10 +625,17 @@
       });
     });
 
-    describe("flexo.request_animation_frame", function () {
-      it("binds the prefixed requestAnimationFrame or uses setTimeout as fallback");
-      it("also flexo.cancel_animation_frame");
-    });
+    if (typeof window === "object") {
+      describe("flexo.request_animation_frame", function () {
+        it("binds the prefixed requestAnimationFrame or uses setTimeout as fallback", function () {
+          assert.ok(typeof flexo.request_animation_frame === "function");
+        });
+        it("also flexo.cancel_animation_frame", function () {
+          assert.ok(typeof flexo.cancel_animation_frame === "function");
+        });
+      });
+    }
+
   });
 
 
