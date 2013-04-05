@@ -6,14 +6,15 @@ A Javascript general-purpose library (used by Bender a.o.)
 Use Mocha (`npm install mocha`) to run tests from the command line (`mocha
 test/flexo.js`.) To run tests from a browser, also install Chai (`npm install
 chai`) then open `test/flexo.html` in your browser. More documentation is
-forthcoming; run the test page to get an idea of what to do.
+forthcoming; [run the test page](http://romulusetrem.us/flexo/test/flexo.html)
+to get an idea of what you can do.
 
 
 ## Changes
 
 ### New in v0.1.3
 
-* `flexo.values` to get values of a dictionary-like object.
+* `values` to get values of a dictionary-like object.
 
 ### New in v0.1.2
 
