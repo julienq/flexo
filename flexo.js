@@ -167,6 +167,13 @@
 
   // Arrays
 
+  // Return a new array without the given item
+  flexo.array_without = function (array, item) {
+    var a = array.slice();
+    flexo.remove_from_array(a, item);
+    return a;
+  };
+
   flexo.extract_from_array = function (array, p, that) {
     var extracted = [];
     var original = slice.call(array);

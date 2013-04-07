@@ -267,6 +267,14 @@
 
   describe("Arrays", function () {
 
+    describe("flexo.array_without(array, item)", function () {
+      it("returns a copy of the array without the given item", function () {
+        var a = [1, 2, 3, 4, 5];
+        assert.deepEqual([1, 2, 3, 5], flexo.array_without(a, 4));
+        assert.deepEqual([1, 2, 3, 4, 5], flexo.array_without(a, 0));
+      });
+    });
+
     describe("flexo.drop_while(array, p, [this])", function () {
       it("drops elements from the array while p is true", function () {
         var a = [0, 1, 2, 3, 4, 0, 1, 2, 3, 4];

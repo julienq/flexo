@@ -15,6 +15,7 @@ to get an idea of what you can do.
 ### New in v0.1.4 (in progress)
 
 * fixed false-negative in Firefox;
+* `array_without` returns a copy of the input array without the given item;
 * `num_to_hex` converts a number into a hex-formatted color.
 
 ### New in v0.1.3
