@@ -12,7 +12,7 @@ to get an idea of what you can do.
 
 ## Changes
 
-### New in v0.1.4
+### New in v0.1.4 (in progress)
 
 * fixed false-negative in Firefox;
 * `num_to_hex` converts a number into a hex-formatted color.
