@@ -12,6 +12,11 @@ to get an idea of what you can do.
 
 ## Changes
 
+### New in v0.1.4
+
+* fixed false-negative in Firefox;
+* `num_to_hex` converts a number into a hex-formatted color.
+
 ### New in v0.1.3
 
 * `values` to get values of a dictionary-like object.

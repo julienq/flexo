@@ -663,10 +663,13 @@
               flexo.create_element.call(document, "xhtml:p")],
               [document.createElementNS("http://www.w3.org/2000/svg", "g"),
               flexo.create_element.call(document, "svg:g")],
-              [document.createElementNS("http://bender.igel.co.jp", "app"),
-              flexo.create_element.call(document, "bender:app")],
+              [document.createElementNS("http://bender.igel.co.jp",
+                "component"),
+              flexo.create_element.call(document, "bender:component")],
             ].forEach(function (pair) {
-              assert.deepEqual(pair[0], pair[1]);
+              ["namespaceURI", "localName"].forEach(function (property) {
+                assert.strictEqual(pair[0][property], pair[1][property]);
+              });
             });
           });
           it("allows the inline definition of id and classes with # and .",
@@ -925,6 +928,16 @@
         assert.strictEqual(flexo.rgb_to_hex(191, 191, 0), "#bfbf00");
         assert.strictEqual(flexo.rgb_to_hex(0, 128, 0), "#008000");
         assert.strictEqual(flexo.rgb_to_hex(128, 255, 255), "#80ffff");
+      });
+    });
+
+    describe("flexo.num_to_hex(n)", function () {
+      it("formats a number as a 6-digit hex color, using only the lowest 24 bit of the integral part", function () {
+        assert.strictEqual(flexo.num_to_hex(0xfef8f0), "#fef8f0");
+        assert.strictEqual(flexo.num_to_hex(0x1234), "#001234");
+        assert.strictEqual(flexo.num_to_hex(0x12345678), "#345678");
+        assert.strictEqual(flexo.num_to_hex(-1), "#ffffff");
+        assert.strictEqual(flexo.num_to_hex("black"), "#000000");
       });
     });
 

@@ -807,6 +807,11 @@
       }).join("");
   };
 
+  // Convert a number to a color hex string. Use only the lower 24 bits.
+  flexo.num_to_hex = function (n) {
+    return "#" +  flexo.pad((n & 0xffffff).toString(16), 6);
+  };
+
 
   // SVG
 
