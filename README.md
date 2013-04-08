@@ -16,6 +16,10 @@ to get an idea of what you can do.
 
 * fixed false-negative in Firefox;
 * `array_without` returns a copy of the input array without the given item;
+* `cancel` throws a ”cancel” exception when called with a true value, or no
+  value at all;
+* `make_property` makes use of cancel to cancel setting a property instead of
+  the ambiguous ”undefined” value (the setter receives a third parameter);
 * `num_to_hex` converts a number into a hex-formatted color.
 
 ### New in v0.1.3

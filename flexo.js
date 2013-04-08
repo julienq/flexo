@@ -38,17 +38,20 @@
   };
 
   // Define a property named `name` on object `obj` with the custom setter `set`
-  // The setter gets two parameters (<new value>, <current value>) and returns
-  // the new value to be set; if the setter returns undefined, then the value is
-  // not updated
+  // The setter gets three parameters (<new value>, <current value>, <cancel>)
+  // and returns the new value to be set. If cancel is called with no value or a
+  // true value, there is no update.
   flexo.make_property = function (obj, name, set) {
     var value;
     Object.defineProperty(obj, name, { enumerable: true,
       get: function () { return value; },
       set: function (v) {
-        var v_ = set.call(this, v, value);
-        if (v_ !== undefined) {
-          value = v_;
+        try {
+          value = set.call(this, v, value, flexo.cancel);
+        } catch (e) {
+          if (e !== "cancel") {
+            throw e;
+          }
         }
       }
     });
@@ -462,6 +465,17 @@
 
 
   // Functions and Asynchronicity
+
+  // This function gets passed to input and output value functions so that the
+  // input or output can be cancelled. If called with no parameter or a single
+  // parameter evaluating to a truthy value, throw a cancel exception;
+  // otherwise, return false.
+  flexo.cancel = function (p) {
+    if (arguments.length === 0 || !!p) {
+      throw "cancel";
+    }
+    return false;
+  };
 
   // No-op function, returns nothing
   flexo.nop = function () {
