@@ -642,6 +642,12 @@
       });
     });
 
+    describe("flexo.nop", function () {
+      it("does nothing.", function () {
+        assert.ok(typeof flexo.nop === "function");
+      });
+    });
+
     describe("flexo.seq", function () {
       it("executes asynchronous commands in sequence", function (done) {
         var seq = flexo.seq();
