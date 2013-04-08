@@ -66,18 +66,17 @@
     describe("flexo.make_property(obj, name, set)", function () {
       var x = {};
       it("defines a property named name on object obj with the custom setter set", function () {
-        flexo.make_property(x, "foo", function (v, current) {
-          if (v !== current) {
-            return v + "!";
-          }
+        flexo.make_property(x, "foo", function (v, current, cancel) {
+          cancel(v === current);
+          return v + "!";
         });
         assert.ok(x.hasOwnProperty("foo"), "x has property \"foo\"");
       });
-      it("the setter gets two parameters (<new value>, <current value>) and returns the new value to be set", function () {
+      it("the setter gets two parameters (<new value>, <current value>, <cancel>) and returns the new value to be set", function () {
         x.foo = "bar";
         assert.strictEqual(x.foo, "bar!", "x.foo = \"bar!\"");
       });
-      it("if the setter returns undefined, then the value is not updated", function () {
+      it("if the setter calls <cancel> with no value or a true-y value, then the value is not updated", function () {
         x.foo = "bar!";
         assert.strictEqual(x.foo, "bar!", "x.foo was not updated");
       });
@@ -266,6 +265,14 @@
 
 
   describe("Arrays", function () {
+
+    describe("flexo.array_without(array, item)", function () {
+      it("returns a copy of the array without the given item", function () {
+        var a = [1, 2, 3, 4, 5];
+        assert.deepEqual([1, 2, 3, 5], flexo.array_without(a, 4));
+        assert.deepEqual([1, 2, 3, 4, 5], flexo.array_without(a, 0));
+      });
+    });
 
     describe("flexo.drop_while(array, p, [this])", function () {
       it("drops elements from the array while p is true", function () {
@@ -603,6 +610,31 @@
 
   describe("Functions and Asynchronicity", function () {
 
+    describe("flexo.cancel([p])", function () {
+      it("throws a \"cancel\" exception when p is truthy (defaults to true)", function () {
+        try {
+          flexo.cancel();
+        } catch (e) {
+          assert.strictEqual(e, "cancel");
+        }
+        try {
+          flexo.cancel(true);
+        } catch (e) {
+          assert.strictEqual(e, "cancel");
+        }
+        try {
+          flexo.cancel("true-ish");
+        } catch (e) {
+          assert.strictEqual(e, "cancel");
+        }
+        flexo.cancel(undefined);
+        assert.ok(true);
+      });
+      it("returns false otherwise", function () {
+        assert.strictEqual(flexo.cancel(false) || "ok", "ok");
+      });
+    });
+
     describe("flexo.id", function () {
       it("returns its first argument unchanged", function () {
         assert.strictEqual(flexo.id(1), 1);
@@ -663,10 +695,13 @@
               flexo.create_element.call(document, "xhtml:p")],
               [document.createElementNS("http://www.w3.org/2000/svg", "g"),
               flexo.create_element.call(document, "svg:g")],
-              [document.createElementNS("http://bender.igel.co.jp", "app"),
-              flexo.create_element.call(document, "bender:app")],
+              [document.createElementNS("http://bender.igel.co.jp",
+                "component"),
+              flexo.create_element.call(document, "bender:component")],
             ].forEach(function (pair) {
-              assert.deepEqual(pair[0], pair[1]);
+              ["namespaceURI", "localName"].forEach(function (property) {
+                assert.strictEqual(pair[0][property], pair[1][property]);
+              });
             });
           });
           it("allows the inline definition of id and classes with # and .",
@@ -925,6 +960,16 @@
         assert.strictEqual(flexo.rgb_to_hex(191, 191, 0), "#bfbf00");
         assert.strictEqual(flexo.rgb_to_hex(0, 128, 0), "#008000");
         assert.strictEqual(flexo.rgb_to_hex(128, 255, 255), "#80ffff");
+      });
+    });
+
+    describe("flexo.num_to_hex(n)", function () {
+      it("formats a number as a 6-digit hex color, using only the lowest 24 bit of the integral part", function () {
+        assert.strictEqual(flexo.num_to_hex(0xfef8f0), "#fef8f0");
+        assert.strictEqual(flexo.num_to_hex(0x1234), "#001234");
+        assert.strictEqual(flexo.num_to_hex(0x12345678), "#345678");
+        assert.strictEqual(flexo.num_to_hex(-1), "#ffffff");
+        assert.strictEqual(flexo.num_to_hex("black"), "#000000");
       });
     });
 
