@@ -10,9 +10,16 @@ forthcoming; [run the test page](http://romulusetrem.us/flexo/test/flexo.html)
 to get an idea of what you can do.
 
 
+## TODO
+
+* Write documentation
+* Call `flush` explicitely on `Seq` object
+* Randomness: drunk, urn, &c.
+
+
 ## Changes
 
-### New in v0.1.4 (in progress)
+### New in v0.1.4
 
 * fixed false-negative in Firefox;
 * `array_without` returns a copy of the input array without the given item;
