@@ -255,6 +255,26 @@
     return shuffled;
   };
 
+  // Pick random elements from an array and remove them from the array. When the
+  // array is empty, recreate the initial array.
+  flexo.Urn = {
+    random_element: function () {
+      if (!this.remaining || this.remaining.length === 0) {
+        this.remaining = slice.call(this.array);
+      }
+      var i = flexo.random_int(this.remaining.length - 1);
+      return this.remaining.splice(i, 1)[0];
+    }
+  };
+
+  // Create a new urn to pick from.
+  flexo.urn = function (a) {
+    var urn = Object.create(flexo.Urn);
+    urn.array = a;
+    return urn;
+  };
+
+
   // Return all the values of an object (presumably used as a dictionary)
   flexo.values = function (object) {
     return Object.keys(object).map(function (key) {

@@ -14,13 +14,14 @@ to get an idea of what you can do.
 
 * Write documentation
 * Seq improvements: foreach, &c.
-* Randomness: drunk, urn, seeded generator, &c.
+* Randomness: drunk, seeded generator, &c.
 
 
 ## Changes
 
 ### New in v0.1.5 (forthcoming)
 
+* **urn** to pick random elements from an array while emptying the array;
 * `Seq.flush()` can be called explicitely to start flushing without waiting for
   timeout.
 

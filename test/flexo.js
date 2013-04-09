@@ -3,7 +3,8 @@
 
   var assert = typeof require === "function" && require("chai").assert ||
     window.chai.assert;
-  var flexo = typeof require === "function" && require("flexo") || window.flexo;
+  var flexo = typeof require === "function" && require("../flexo.js") ||
+    window.flexo;
 
   describe("Function.prototype.bind", function () {
     it("is defined", function () {
@@ -335,6 +336,23 @@
 
     describe("flexo.replace_in_array(array, old_item, new_item)", function () {
       it("replaces the first instance of old_item in the array with new_item, and return old_item if it was present");
+    });
+
+    describe("flexo.urn(array)", function () {
+      var a = [1, 2, 3, 4, 5];
+      var u = flexo.urn(a);
+      it("creates a new urn from a given array", function () {
+        assert.deepEqual(u.array, a);
+      });
+      it("picks an element with urn.random_element(), refilling the urn with the original array once it becomes empty", function () {
+        var picked = []
+        for (var i = 0; i < a.length; ++i) {
+          picked.push(u.random_element());
+        }
+        assert.deepEqual(picked.sort(), a);
+        var p = u.random_element();
+        assert.ok(a.indexOf(p) >= 0);
+      });
     });
 
     describe("flexo.values(dictionary)", function () {
