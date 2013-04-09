@@ -13,11 +13,16 @@ to get an idea of what you can do.
 ## TODO
 
 * Write documentation
-* Call `flush` explicitely on `Seq` object
-* Randomness: drunk, urn, &c.
+* Seq improvements: foreach, &c.
+* Randomness: drunk, urn, seeded generator, &c.
 
 
 ## Changes
+
+### New in v0.1.5 (forthcoming)
+
+* `Seq.flush()` can be called explicitely to start flushing without waiting for
+  timeout.
 
 ### New in v0.1.4
 

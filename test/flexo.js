@@ -661,6 +661,19 @@
           done();
         });
       });
+      it("starts flushing automatically but can be started manually as well by calling seq.flush()", function (done) {
+        var seq = flexo.seq();
+        var timeout = function (k) {
+          setTimeout(k, 10);
+        };
+        for (var i = 0; i < 10; ++i) {
+          seq.add(timeout);
+        }
+        seq.add(function () {
+          done();
+        });
+        seq.flush();
+      });
     });
 
     if (typeof window === "object") {
