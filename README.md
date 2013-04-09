@@ -21,6 +21,7 @@ to get an idea of what you can do.
 
 ### New in v0.1.5 (forthcoming)
 
+* **make_property** takes an optional initial value;
 * **urn** to pick random elements from an array while emptying the array;
 * `Seq.flush()` can be called explicitely to start flushing without waiting for
   timeout.
@@ -28,23 +29,23 @@ to get an idea of what you can do.
 ### New in v0.1.4
 
 * fixed false-negative in Firefox;
-* `array_without` returns a copy of the input array without the given item;
-* `cancel` throws a ”cancel” exception when called with a true value, or no
+* **array_without** returns a copy of the input array without the given item;
+* **cancel** throws a ”cancel” exception when called with a true value, or no
   value at all;
-* `make_property` makes use of cancel to cancel setting a property instead of
+* **make_property** makes use of cancel to cancel setting a property instead of
   the ambiguous ”undefined” value (the setter receives a third parameter);
-* `num_to_hex` converts a number into a hex-formatted color.
+* **num_to_hex** converts a number into a hex-formatted color.
 
 ### New in v0.1.3
 
-* `values` to get values of a dictionary-like object.
+* **values** to get values of a dictionary-like object.
 
 ### New in v0.1.2
 
-* `listen`, `listen_once` and `unlisten` return the listener;
-* new function `nop`: does nothing.
+* **listen**, **listen_once** and **unlisten** return the listener;
+* new function **nop**: does nothing.
 
 ### New in v0.1.1
 
-* separated `poly_points` to generate points for an existing element;
+* separated **poly_points** to generate points for an existing element;
 * added tests.
