@@ -13,6 +13,7 @@ to get an idea of what you can do.
 ## TODO
 
 * Write documentation
+* String format: "%(0)0".fmt(1) should be "10"
 * Seq improvements: foreach, &c.
 * Randomness: drunk, seeded generator, &c.
 

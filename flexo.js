@@ -6,7 +6,7 @@
   var slice = Array.prototype.slice;
   var splice = Array.prototype.splice;
 
-  var browser = typeof window === "object";
+  var browserp = typeof window === "object";
 
   if (typeof Function.prototype.bind !== "function") {
     Function.prototype.bind = function (x) {
@@ -63,6 +63,7 @@
   // Simple format function for messages and templates. Use %0, %1... as slots
   // for parameters. %% is also replaced by %. Null and undefined are replaced
   // by an empty string.
+  // TODO "%(0)0".fmt(1) should be "10"
   String.prototype.fmt = function () {
     var args = arguments;
     return this.replace(/%(\d+|%)/g, function (_, p) {
@@ -71,7 +72,7 @@
   };
 
   // Chop the last character of a string iff it's a newline
-  flexo.chomp = function(string) {
+  flexo.chomp = function (string) {
     return string.replace(/\n$/, "");
   };
 
@@ -155,7 +156,7 @@
   };
 
   // Linear interpolation
-  flexo.lerp = function(from, to, ratio) {
+  flexo.lerp = function (from, to, ratio) {
     return from + (to - from) * ratio;
   };
 
@@ -564,7 +565,7 @@
   };
 
 
-  if (browser) {
+  if (browserp) {
     flexo.request_animation_frame = (window.requestAnimationFrame ||
       window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
       window.msRequestAnimationFrame || function (f) {
@@ -755,7 +756,7 @@
       "union", "uplimit", "variance", "vector", "vectorproduct", "xor"]
   };
 
-  if (browser) {
+  if (browserp) {
 
     // Shorthand to create elements, e.g. flexo.$("svg#main.content")
     flexo.$ = function () {
@@ -843,7 +844,7 @@
   // Convert a color from hsv space (hue in radians, saturation and brightness
   // in the [0, 1] interval) to RGB, returned as an array of RGB values in the
   // [0, 256[ interval.
-  flexo.hsv_to_rgb = function(h, s, v) {
+  flexo.hsv_to_rgb = function (h, s, v) {
     s = flexo.clamp(s, 0, 1);
     v = flexo.clamp(v, 0, 1);
     if (s === 0) {
@@ -864,12 +865,12 @@
 
   // Convert a color from hsv space (hue in degrees, saturation and brightness
   // in the [0, 1] interval) to an RGB hex value
-  flexo.hsv_to_hex = function(h, s, v) {
+  flexo.hsv_to_hex = function (h, s, v) {
     return flexo.rgb_to_hex.apply(this, flexo.hsv_to_rgb(h, s, v));
   };
 
   // Convert an RGB color (3 values in the [0, 256[ interval) to a hex value
-  flexo.rgb_to_hex = function() {
+  flexo.rgb_to_hex = function () {
     return "#" + map.call(arguments,
       function (x) {
         return flexo.pad(flexo.clamp(Math.floor(x), 0, 255).toString(16), 2);
@@ -902,7 +903,7 @@
   };
 
   // Find the closest <svg> ancestor for a given element
-  flexo.find_svg = function(elem) {
+  flexo.find_svg = function (elem) {
     if (!elem) {
       return;
     }
