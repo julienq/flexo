@@ -83,7 +83,7 @@
 
   // Pad a string to the given length with the given padding (defaults to 0)
   // if it is shorter. The padding is added at the beginning of the string.
-  flexo.pad = function(string, length, padding) {
+  flexo.pad = function (string, length, padding) {
     if (typeof padding !== "string") {
       padding = "0";
     }
@@ -94,9 +94,16 @@
     return l > 0 ? (Array(l).join(padding)) + string : string;
   };
 
+  // Quote a string, escaping quotes properly. Uses " by default, but can be
+  // changed to '
+  flexo.quote = function (string, q) {
+    q = q || '"';
+    return "%0%1%0".fmt(q, string.replace(new RegExp(q, "g"), "\\" + q));
+  };
+
   // Convert a number to roman numerals (integer part only; n must be positive
   // or zero.) Now that's an important function to have in any framework.
-  flexo.to_roman = function(n) {
+  flexo.to_roman = function (n) {
     var unit = function (n, i, v, x) {
       var r = "";
       if (n % 5 === 4) {

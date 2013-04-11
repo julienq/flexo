@@ -147,6 +147,17 @@
       });
     });
 
+    describe("flexo.quote(string, [quotes='\"'])", function () {
+      it("Quotes a string, escaping quotes inside the string", function () {
+        assert.strictEqual(flexo.quote("Hello, \"World!\""),
+          "\"Hello, \\\"World!\\\"\"");
+      });
+      it("Uses double-quotes by default, but can be passed single quote as a second argument", function () {
+        assert.strictEqual(flexo.quote("Hello, \"World!\"", "'"),
+          "'Hello, \"World!\"'");
+      });
+    });
+
     describe("flexo.to_roman(n)", function () {
       it("returns `n` in roman numerals (in lowercase)", function () {
         assert.strictEqual(flexo.to_roman(1), "i");

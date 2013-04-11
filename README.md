@@ -21,6 +21,7 @@ to get an idea of what you can do.
 
 ### New in v0.1.5 (forthcoming)
 
+* **quote** to quote a string;
 * **make_property** takes an optional initial value;
 * **urn** to pick random elements from an array while emptying the array;
 * `Seq.flush()` can be called explicitely to start flushing without waiting for
