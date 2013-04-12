@@ -522,15 +522,36 @@
     return false;
   };
 
-  // No-op function, returns nothing
-  flexo.nop = function () {
-  };
-
   // Identity function
   flexo.id = function (x) {
     return x;
   };
 
+  // No-op function, returns nothing
+  flexo.nop = function () {
+  };
+
+  // Trampoline calls, adapted from
+  // http://github.com/spencertipping/js-in-ten-minutes
+
+  // Use a trampoline to call a function; we expect a thunk to be returned
+  // through the get_thunk() function below. Return nothing to step off the
+  // trampoline (e.g. to wait for an event before continuing.)
+  Function.prototype.trampoline = function () {
+    var thunk = [this, arguments];
+    var escape = arguments[arguments.length - 1];
+    while (thunk && thunk[0] !== escape) {
+      thunk = thunk[0].apply(this, thunk[1]);
+    }
+    if (thunk) {
+      return escape.apply(this, thunk[1]);
+    }
+  };
+
+  // Return a thunk suitable for the trampoline function above.
+  Function.prototype.get_thunk = function() {
+    return [this, arguments];
+  };
 
   // Seq object for chaining asynchronous calls
   flexo.Seq = {};
