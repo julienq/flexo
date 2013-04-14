@@ -691,6 +691,10 @@
       });
     });
 
+    describe("Trampoline calls", function () {
+      it("todo");
+    });
+
     describe("flexo.seq", function () {
       it("executes asynchronous commands in sequence", function (done) {
         var seq = flexo.seq();

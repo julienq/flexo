@@ -20,8 +20,9 @@ to get an idea of what you can do.
 
 ## Changes
 
-### New in v0.1.5 (forthcoming)
+### New in v0.1.5
 
+* **Function.trampoline** and **Function.get_thunk** (require tests)
 * **quote** to quote a string;
 * **make_property** takes an optional initial value;
 * **urn** to pick random elements from an array while emptying the array;
