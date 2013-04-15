@@ -691,9 +691,13 @@
       });
     });
 
-    describe("flexo.discard", function () {
+    describe("flexo.discard(f, [n=0])", function () {
       it("returns a function that discards its arguments", function (done) {
         flexo.discard(done)("augh!");
+      });
+      it("keeps at most n arguments if n is specified", function () {
+        assert.deepEqual("0 1 2 3".split(" ").map(flexo.discard(parseInt, 1)),
+          [0, 1, 2, 3]);
       });
     });
 
