@@ -614,19 +614,17 @@
 
     describe("flexo.notify(source, type, arguments={})", function () {
       it("sends an event notification of `type` on behalf of `source`", function (done) {
-        flexo.listen(source, "@test-notify", function () {
-          done();
-        });
-        flexo.notify(source, "@test-notify");
+        flexo.listen(source, "!test-notify", flexo.discard(done));
+        flexo.notify(source, "!test-notify");
       });
       it("sends additional arguments through the `arguments` object", function () {
-        flexo.listen(source, "@test-args", function (e) {
+        flexo.listen(source, "!test-args", function (e) {
           assert.strictEqual(e.source, source);
-          assert.strictEqual(e.type, "@test-args");
+          assert.strictEqual(e.type, "!test-args");
           assert.strictEqual(e.foo, 1);
           assert.strictEqual(e.bar, 2);
         });
-        flexo.notify(source, "@test-args", { foo: 1, bar: 2 });
+        flexo.notify(source, "!test-args", { foo: 1, bar: 2 });
       });
     });
 
@@ -693,6 +691,12 @@
       });
     });
 
+    describe("flexo.discard", function () {
+      it("returns a function that discards its arguments", function (done) {
+        flexo.discard(done)("augh!");
+      });
+    });
+
     describe("flexo.id", function () {
       it("returns its first argument unchanged", function () {
         assert.strictEqual(flexo.id(1), 1);
@@ -719,9 +723,7 @@
         for (var i = 0; i < 10; ++i) {
           seq.add_thunk(timeout.get_thunk());
         }
-        seq.add_thunk(function () {
-          done();
-        }.get_thunk());
+        seq.add_thunk(flexo.discard(done).get_thunk());
       });
       it("starts flushing automatically but can be started manually as well by calling seq.flush()", function (done) {
         var seq = flexo.seq();
@@ -731,9 +733,7 @@
         for (var i = 0; i < 10; ++i) {
           seq.add_thunk(timeout.get_thunk());
         }
-        seq.add_thunk(function () {
-          done();
-        }.get_thunk());
+        seq.add_thunk(flexo.discard(done).get_thunk());
         seq.flush();
       });
     });

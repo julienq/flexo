@@ -526,6 +526,13 @@
     return false;
   };
 
+  // Return a function that discards its arguments
+  flexo.discard = function (f) {
+    return function () {
+      f.call(this);
+    };
+  };
+
   // Identity function
   flexo.id = function (x) {
     return x;
