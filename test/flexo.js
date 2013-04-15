@@ -112,6 +112,12 @@
       it("replaces %% with %", function () {
         assert.strictEqual("%%0 = %foo", "%%%%0 = %%%0".fmt("foo"));
       });
+      it("accepts parens to disambiguate input, e.g. \"x * 10 = %(0)0\".fmt(x)", function () {
+        assert.strictEqual("x * 10 = %(0)0".fmt(12), "x * 10 = 120");
+      });
+      it("parses the pattern number as a base-10 integer, so that %03 is the same as %3", function () {
+        assert.strictEqual("%03".fmt(0, 1, 2, 3, 4, 5, 6, 7), "3");
+      });
     });
 
     describe("flexo.chomp(string)", function () {

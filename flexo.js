@@ -64,13 +64,14 @@
   // Strings
 
   // Simple format function for messages and templates. Use %0, %1... as slots
-  // for parameters. %% is also replaced by %. Null and undefined are replaced
-  // by an empty string.
-  // TODO "%(0)0".fmt(1) should be "10"
+  // for parameters; %(n) can also be used to avoid possible ambiguities (e.g.
+  // "x * 10 = %(0)0".) %% is also replaced by %. Null and undefined are
+  // replaced by an empty string.
   String.prototype.fmt = function () {
     var args = arguments;
-    return this.replace(/%(\d+|%)/g, function (_, p) {
-      return p === "%" ? "%" : args[p] == null ? "" : args[p];
+    return this.replace(/%(\d+|%|\((\d+)\))/g, function (_, p, pp) {
+      var p_ = parseInt(pp || p, 10);
+      return p === "%" ? "%" : args[p_] == null ? "" : args[p_];
     });
   };
 

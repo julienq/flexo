@@ -13,7 +13,6 @@ to get an idea of what you can do.
 ## TODO
 
 * Write documentation
-* String format: "%(0)0".fmt(1) should be "10"
 * Seq improvements: foreach, &c.
 * Randomness: drunk, seeded generator, &c.
 
@@ -22,6 +21,8 @@ to get an idea of what you can do.
 
 ### New in v0.2.0 (in progress)
 
+* **String.fmt** converts %n to an integer (so %03 is the same as %3.)
+* **String.fmt** accepts the form %(n) to avoid ambiguites (e.g. "%(0)0".)
 * **Seq.add_thunk** replaces **Seq.add**.
 
 ### New in v0.1.5
