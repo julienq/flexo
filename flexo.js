@@ -1,8 +1,11 @@
 (function (flexo) {
   "use strict";
 
+  flexo.VERSION = "0.2.0";
+
   var foreach = Array.prototype.forEach;
   var map = Array.prototype.map;
+  var push = Array.prototype.push;
   var slice = Array.prototype.slice;
   var splice = Array.prototype.splice;
 
@@ -537,15 +540,19 @@
   // Use a trampoline to call a function; we expect a thunk to be returned
   // through the get_thunk() function below. Return nothing to step off the
   // trampoline (e.g. to wait for an event before continuing.)
-  Function.prototype.trampoline = function () {
-    var thunk = [this, arguments];
-    var escape = arguments[arguments.length - 1];
+  function apply_thunk(thunk) {
+    var escape = thunk[1][thunk[1].length - 1];
+    var self = thunk[0];
     while (thunk && thunk[0] !== escape) {
-      thunk = thunk[0].apply(this, thunk[1]);
+      thunk = thunk[0].apply(self, thunk[1]);
     }
     if (thunk) {
-      return escape.apply(this, thunk[1]);
+      return escape.apply(self, thunk[1]);
     }
+  }
+
+  Function.prototype.trampoline = function () {
+    return apply_thunk([this, arguments]);
   };
 
   // Return a thunk suitable for the trampoline function above.
@@ -556,29 +563,30 @@
   // Seq object for chaining asynchronous calls
   flexo.Seq = {};
 
-  flexo.Seq.add = function (f) {
-    if (typeof f === "function") {
-      this.queue.push(f);
-      if (!this.flushing) {
-        this.flushing = true;
-        this.timeout = setTimeout(this.flush.bind(this), 0);
-      }
+  // Add a thunk to the queue
+  flexo.Seq.add_thunk = function (thunk) {
+    if (!this.__flush) {
+      this.__flush = this.flush.bind(this);
+      this.__timeout = setTimeout(this.__flush, 0);
     }
+    push.call(thunk[1], this.__flush);
+    this.queue.push(thunk);
   };
 
+  // Start flushing the queue; this is called automatically by a timer or may be
+  // called explicitly to control when flushing starts
   flexo.Seq.flush = function () {
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-      delete this.timeout;
+    if (this.__timeout) {
+      clearTimeout(this.__timeout);
+      delete this.__timeout;
     }
-    var f = this.queue.shift();
-    if (f) {
-      f(this.flush.bind(this));
-    } else {
-      delete this.flushing;
+    if (this.queue.length > 0) {
+      return apply_thunk(this.queue.shift());
     }
+    delete this.__flush;
   };
 
+  // Create a new empty Seq object
   flexo.seq = function () {
     var seq = Object.create(flexo.Seq);
     seq.queue = [];

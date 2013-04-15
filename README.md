@@ -20,13 +20,17 @@ to get an idea of what you can do.
 
 ## Changes
 
+### New in v0.2.0 (in progress)
+
+* **Seq.add_thunk** replaces **Seq.add**.
+
 ### New in v0.1.5
 
 * **Function.trampoline** and **Function.get_thunk** (require tests)
 * **quote** to quote a string;
 * **make_property** takes an optional initial value;
 * **urn** to pick random elements from an array while emptying the array;
-* `Seq.flush()` can be called explicitely to start flushing without waiting for
+* **Seq.flush()** can be called explicitly to start flushing without waiting for
   timeout.
 
 ### New in v0.1.4

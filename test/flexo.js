@@ -6,6 +6,15 @@
   var flexo = typeof require === "function" && require("../flexo.js") ||
     window.flexo;
 
+  describe("Flexo", function () {
+    it("is defined", function () {
+      assert.isObject(flexo);
+    });
+    it("is up to version %0".fmt(flexo.VERSION), function () {
+      assert.isString(flexo.VERSION);
+    });
+  });
+
   describe("Function.prototype.bind", function () {
     it("is defined", function () {
       assert.isFunction(Function.prototype.bind, "bind is a function");
@@ -702,11 +711,11 @@
           setTimeout(k, 10);
         };
         for (var i = 0; i < 10; ++i) {
-          seq.add(timeout);
+          seq.add_thunk(timeout.get_thunk());
         }
-        seq.add(function () {
+        seq.add_thunk(function () {
           done();
-        });
+        }.get_thunk());
       });
       it("starts flushing automatically but can be started manually as well by calling seq.flush()", function (done) {
         var seq = flexo.seq();
@@ -714,11 +723,11 @@
           setTimeout(k, 10);
         };
         for (var i = 0; i < 10; ++i) {
-          seq.add(timeout);
+          seq.add_thunk(timeout.get_thunk());
         }
-        seq.add(function () {
+        seq.add_thunk(function () {
           done();
-        });
+        }.get_thunk());
         seq.flush();
       });
     });
