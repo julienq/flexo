@@ -21,9 +21,12 @@ to get an idea of what you can do.
 
 ### New in v0.2.0 (in progress)
 
-* **discard** returns a function that discards its arguments.
-* **String.fmt** converts %n to an integer (so %03 is the same as %3.)
-* **String.fmt** accepts the form %(n) to avoid ambiguites (e.g. "%(0)0".)
+* Global **π** is set to Math.PI;
+* **hcaErof** is forEach in reverse (TODO: test);
+* **Function.delay** delays a function execution (TODO: test);
+* **Function.discard** returns a function that discards its arguments;
+* **String.fmt** converts %n to an integer (so %03 is the same as %3);
+* **String.fmt** accepts the form %(n) to avoid ambiguites (e.g. "%(0)0");
 * **Seq.add_thunk** replaces **Seq.add**.
 
 ### New in v0.1.5

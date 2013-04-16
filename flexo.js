@@ -11,6 +11,9 @@
 
   var browserp = typeof window === "object";
 
+  // Define π as a global
+  (browserp ? window : global).π = Math.PI;
+
   if (typeof Function.prototype.bind !== "function") {
     Function.prototype.bind = function (x) {
       var f = this;
@@ -214,6 +217,13 @@
     }
     for (var i = 0, n = a.length; i < n && !p.call(that, a[i], i, a); ++i);
     return a[i];
+  };
+
+  // Foreach in reverse
+  flexo.hcaErof = function (a, f, that) {
+    for (var i = a.length - 1; i >= 0; --i) {
+      f.call(that, a[i], i, a);
+    }
   };
 
   // Partition `a` according to predicate `p` and return and array of two arrays
@@ -524,6 +534,12 @@
       throw "cancel";
     }
     return false;
+  };
+
+  Function.prototype.delay = function () {
+    setTimeout(function () {
+      this.apply(this, arguments);
+    }.bind(this), 0);
   };
 
   // Return a function that discards its arguments. An optional parameter allows
@@ -889,7 +905,7 @@
       var v_ = Math.round(v * 255);
       return [v_, v_, v_];
     } else {
-      h = (((h * 180 / Math.PI) + 360) % 360) / 60;
+      h = (((h * 180 / π) + 360) % 360) / 60;
       var i = Math.floor(h);
       var f = h - i;
       var p = v * (1 - s);
@@ -953,7 +969,7 @@
   };
 
   flexo.deg2rad = function (degrees) {
-    return degrees * Math.PI / 180;
+    return degrees * π / 180;
   };
 
   // Make a list of points for a regular polygon with `sides` sides (should be
@@ -965,7 +981,7 @@
     x = x || 0;
     y = y || 0;
     var points = [];
-    for (var i = 0, ph = 2 * Math.PI / sides; i < sides; ++i) {
+    for (var i = 0, ph = 2 * π / sides; i < sides; ++i) {
       points.push(x + r * Math.cos(phase + ph * i));
       points.push(y - r * Math.sin(phase + ph * i));
     }
@@ -1012,7 +1028,7 @@
             phase: phase + 360 / branches }));
     }
     phase = flexo.deg2rad(phase);
-    for (var i = 0, ph = 4 * Math.PI / branches; i < branches; ++i) {
+    for (var i = 0, ph = 4 * π / branches; i < branches; ++i) {
       points.push(x + r * Math.cos(phase + ph * i));
       points.push(y - r * Math.sin(phase + ph * i));
     }

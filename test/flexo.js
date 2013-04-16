@@ -13,6 +13,9 @@
     it("is up to version %0".fmt(flexo.VERSION), function () {
       assert.isString(flexo.VERSION);
     });
+    it("defines π to Math.PI too", function () {
+      assert.strictEqual(π, Math.PI);
+    });
   });
 
   describe("Function.prototype.bind", function () {
