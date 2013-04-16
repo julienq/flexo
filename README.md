@@ -1,7 +1,8 @@
 flexo
 =====
 
-A Javascript general-purpose library (used by Bender a.o.)
+A Javascript general-purpose library (used by
+[Bender](http://bender.igel.co.jp/) a.o.)
 
 Use Mocha (`npm install mocha`) to run tests from the command line (`mocha
 test/flexo.js`.) To run tests from a browser, also install Chai (`npm install
@@ -13,7 +14,7 @@ to get an idea of what you can do.
 ## TODO
 
 * Write documentation
-* Seq improvements: foreach, &c.
+* Seq improvements: foreach, &c. (also par?)
 * Randomness: drunk, seeded generator, &c.
 
 
