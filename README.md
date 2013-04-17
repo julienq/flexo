@@ -28,7 +28,8 @@ to get an idea of what you can do.
 * **Function.discard** returns a function that discards its arguments;
 * **String.fmt** converts %n to an integer (so %03 is the same as %3);
 * **String.fmt** accepts the form %(n) to avoid ambiguites (e.g. "%(0)0");
-* **Seq.add_thunk** replaces **Seq.add**.
+* **Seq.add_thunk** replaces **Seq.add**;
+* **seq()** can be initialized with a list of thunks.
 
 ### New in v0.1.5
 

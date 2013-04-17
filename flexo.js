@@ -588,14 +588,19 @@
   // Seq object for chaining asynchronous calls
   flexo.Seq = {};
 
-  // Add a thunk to the queue
-  flexo.Seq.add_thunk = function (thunk) {
+  function schedule_flush () {
     if (!this.__flush) {
       this.__flush = this.flush.bind(this);
       this.__timeout = setTimeout(this.__flush, 0);
     }
+  }
+
+  // Add a thunk to the queue
+  flexo.Seq.add_thunk = function (thunk) {
+    schedule_flush.call(this);
     push.call(thunk[1], this.__flush);
-    this.queue.push(thunk);
+    this.thunks.push(thunk);
+    return this;
   };
 
   // Start flushing the queue; this is called automatically by a timer or may be
@@ -605,16 +610,19 @@
       clearTimeout(this.__timeout);
       delete this.__timeout;
     }
-    if (this.queue.length > 0) {
-      return apply_thunk(this.queue.shift());
+    if (this.thunks.length > 0) {
+      return apply_thunk(this.thunks.shift());
     }
     delete this.__flush;
   };
 
   // Create a new empty Seq object
-  flexo.seq = function () {
+  flexo.seq = function (thunks) {
     var seq = Object.create(flexo.Seq);
-    seq.queue = [];
+    seq.thunks = Array.isArray(thunks) ? thunks : [];
+    if (seq.thunks.length > 0) {
+      schedule_flush.call(seq);
+    }
     return seq;
   };
 
