@@ -349,6 +349,24 @@
       });
     });
 
+    describe("flexo.remove_first_from_array(array, p, that)", function () {
+      it("removes the first occurrence of the item from the array that matches predicate p (called with that as this), and returns it",
+        function () {
+          var a = [1, 2, 3, 4, 2];
+          assert.strictEqual(flexo.remove_first_from_array(a,
+              function (x) { return x === 1; }), 1);
+          assert.deepEqual(a, [2, 3, 4, 2]);
+          assert.strictEqual(flexo.remove_first_from_array(a,
+              function (x) { return x === 2; }), 2);
+          assert.deepEqual(a, [3, 4, 2]);
+          assert.strictEqual(flexo.remove_first_from_array(a,
+              function (x) { return x === 5; }));
+          assert.deepEqual(a, [3, 4, 2]);
+          assert.strictEqual(flexo.remove_first_from_array(null,
+              function (x) { return x === 5; }));
+        });
+    });
+
     describe("flexo.remove_from_array(array, item)", function () {
       it("removes the first occurrence of the item from the array, if present and returns it",
         function () {

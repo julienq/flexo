@@ -22,6 +22,8 @@ to get an idea of what you can do.
 
 ### New in v0.2.0 (in progress)
 
+* **remove_first_from_array** removes the first element that matches a
+  predicate;
 * Global **π** is set to Math.PI;
 * **hcaErof** is forEach in reverse (TODO: test);
 * **Function.delay** delays a function execution (TODO: test);

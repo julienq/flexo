@@ -242,6 +242,17 @@
     return a[flexo.random_int(a.length - 1)];
   };
 
+  // Remove the first element from the array that matches the predicate p
+  flexo.remove_first_from_array = function (a, p, that) {
+    if (!Array.isArray(a)) {
+      return;
+    }
+    for (var i = 0, n = a.length; i < n && !p.call(that, a[i], i, a); ++i);
+    if (i < n) {
+      return a.splice(i, 1)[0];
+    }
+  };
+
   // Remove an item from an array
   flexo.remove_from_array = function (array, item) {
     if (array && item != null) {
