@@ -63,6 +63,73 @@
     });
   };
 
+  // Pattern matching
+  //   * null
+  //   * undefined
+  //   * boolean / true, false
+  //   * number / literal number
+  //   * string / literal string
+  flexo.match = function (t, pattern) {
+    if (flexo.match.hasOwnProperty(pattern)) {
+      return flexo.match[pattern](t);
+    }
+    if (pattern === "true") {
+      return t === true;
+    }
+    if (pattern === "false") {
+      return t === false;
+    }
+    var m;
+    if (m = pattern.match(/^(["'])([^(?:\1|\\.)]*)\1$/)) {
+      return t === m[2].replace(/\\(.)/g, "$1");
+    }
+    return flexo.match.number(t, parseFloat(pattern));
+  };
+
+  flexo.match_literal = function (t, literal) {
+    var type = typeof literal;
+    return type === "object" ?
+      Array.isArray(t) ? flexo.match.array(t, literal) :
+        flexo.match.object(t, literal) :
+      flexo.match[type](t, literal);
+  };
+
+  flexo.match.null = function (t) {
+    return t === null;
+  };
+
+  flexo.match.undefined = function (t) {
+    return t === undefined;
+  };
+
+  flexo.match.boolean = function (t, b) {
+    return typeof b === "boolean" ? t === b : typeof t === "number";
+  };
+
+  flexo.match.number = function (t, n) {
+    return typeof n === "number" ? t === n : typeof t === "number";
+  };
+
+  flexo.match.string = function (t, s) {
+    return typeof s === "string" ? t === s : typeof t === "string";
+  };
+
+  flexo.match.array = function (t, a) {
+    if (Array.isArray(a)) {
+      var n = a.length;
+      if (n !== t.length) {
+        return false;
+      }
+      for (var i = 0, n = a.length; i < n; ++i) {
+        if (!flexo.match_literal(t[i], a[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return Array.isArray(t);
+  };
+
 
   // Strings
 
