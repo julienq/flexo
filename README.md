@@ -22,6 +22,8 @@ to get an idea of what you can do.
 
 ### New in v0.2.0 (in progress)
 
+* renamed ~~**cancel**~~ to **fail**; not passed as extra argument in the setter
+  of **make_property**.
 * **remove_first_from_array** removes the first element that matches a
   predicate;
 * Global **π** is set to Math.PI;

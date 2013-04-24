@@ -44,18 +44,17 @@
   };
 
   // Define a property named `name` on object `obj` with the custom setter `set`
-  // The setter gets three parameters (<new value>, <current value>, <cancel>)
-  // and returns the new value to be set. If cancel is called with no value or a
-  // true value, there is no update. An initial value may be provided, that does
-  // not trigger the setter.
+  // The setter gets three parameters (<new value>, <current value>) and returns
+  // the new value to be set. An initial value may be provided, which does not
+  // trigger the setter.
   flexo.make_property = function (obj, name, set, value) {
     Object.defineProperty(obj, name, { enumerable: true,
       get: function () { return value; },
       set: function (v) {
         try {
-          value = set.call(this, v, value, flexo.cancel);
+          value = set.call(this, v, value, flexo.fail);
         } catch (e) {
-          if (e !== "cancel") {
+          if (e !== "fail") {
             throw e;
           }
         }
@@ -603,17 +602,6 @@
 
   // Functions and Asynchronicity
 
-  // This function gets passed to input and output value functions so that the
-  // input or output can be cancelled. If called with no parameter or a single
-  // parameter evaluating to a truthy value, throw a cancel exception;
-  // otherwise, return false.
-  flexo.cancel = function (p) {
-    if (arguments.length === 0 || !!p) {
-      throw "cancel";
-    }
-    return false;
-  };
-
   Function.prototype.delay = function () {
     setTimeout(function () {
       this.apply(this, arguments);
@@ -626,6 +614,16 @@
     return function () {
       return f.apply(this, slice.call(arguments, 0, n || 0));
     };
+  };
+
+  // This function can be called to fail early. If called with no parameter or a
+  // single parameter evaluating to a truthy value, throw a "fail" exception;
+  // otherwise, return false.
+  flexo.fail = function (p) {
+    if (arguments.length === 0 || !!p) {
+      throw "fail";
+    }
+    return false;
   };
 
   // Identity function

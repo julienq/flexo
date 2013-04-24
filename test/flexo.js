@@ -79,17 +79,17 @@
     describe("flexo.make_property(obj, name, set)", function () {
       var x = {};
       it("defines a property named name on object obj with the custom setter set", function () {
-        flexo.make_property(x, "foo", function (v, current, cancel) {
-          cancel(v === current);
+        flexo.make_property(x, "foo", function (v, current) {
+          flexo.fail(v === current);
           return v + "!";
         });
         assert.ok(x.hasOwnProperty("foo"), "x has property \"foo\"");
       });
-      it("the setter gets two parameters (<new value>, <current value>, <cancel>) and returns the new value to be set", function () {
+      it("the setter gets two parameters (<new value>, <current value>) and returns the new value to be set", function () {
         x.foo = "bar";
         assert.strictEqual(x.foo, "bar!", "x.foo = \"bar!\"");
       });
-      it("if the setter calls <cancel> with no value or a true-y value, then the value is not updated", function () {
+      it("the setter may call flexo.fail() with no value or a true-y value, so that the value is not updated", function () {
         x.foo = "bar!";
         assert.strictEqual(x.foo, "bar!", "x.foo was not updated");
       });
@@ -687,31 +687,6 @@
 
   describe("Functions and Asynchronicity", function () {
 
-    describe("flexo.cancel([p])", function () {
-      it("throws a \"cancel\" exception when p is truthy (defaults to true)", function () {
-        try {
-          flexo.cancel();
-        } catch (e) {
-          assert.strictEqual(e, "cancel");
-        }
-        try {
-          flexo.cancel(true);
-        } catch (e) {
-          assert.strictEqual(e, "cancel");
-        }
-        try {
-          flexo.cancel("true-ish");
-        } catch (e) {
-          assert.strictEqual(e, "cancel");
-        }
-        flexo.cancel(undefined);
-        assert.ok(true);
-      });
-      it("returns false otherwise", function () {
-        assert.strictEqual(flexo.cancel(false) || "ok", "ok");
-      });
-    });
-
     describe("flexo.discard(f, [n=0])", function () {
       it("returns a function that discards its arguments", function (done) {
         flexo.discard(done)("augh!");
@@ -719,6 +694,31 @@
       it("keeps at most n arguments if n is specified", function () {
         assert.deepEqual("0 1 2 3".split(" ").map(flexo.discard(parseInt, 1)),
           [0, 1, 2, 3]);
+      });
+    });
+
+    describe("flexo.fail([p])", function () {
+      it("throws a \"fail\" exception when p is truthy (defaults to true)", function () {
+        try {
+          flexo.fail();
+        } catch (e) {
+          assert.strictEqual(e, "fail");
+        }
+        try {
+          flexo.fail(true);
+        } catch (e) {
+          assert.strictEqual(e, "fail");
+        }
+        try {
+          flexo.fail("true-ish");
+        } catch (e) {
+          assert.strictEqual(e, "fail");
+        }
+        flexo.fail(undefined);
+        assert.ok(true);
+      });
+      it("returns false otherwise", function () {
+        assert.strictEqual(flexo.fail(false) || "ok", "ok");
       });
     });
 
