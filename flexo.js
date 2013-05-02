@@ -527,9 +527,24 @@
     req.send(params.data || "");
   };
 
+  // Parse a string as a float, or failing that, as an integer. This can handle
+  // cases like hexadicemal numbers, which would only return 0 with parseFloat.
+  flexo.parse_number = function (str) {
+    var f = parseFloat(str);
+    if (f === 0) {
+      var i = parseInteger(str);
+      return isNaN(i) ? f : i;
+    }
+    return f;
+  };
+
   // Get args from an URI
   flexo.get_args = function (defaults, argstr) {
-    var sep, args = defaults || {};
+    var args = defaults || {};
+    var types = {};
+    for (var a in args) {
+      types[a] = typeof args[a];
+    }
     if (!argstr) {
       argstr = typeof window === "object" &&
         typeof window.location === "object" &&
@@ -540,8 +555,21 @@
       if (!q) {
         return;
       }
-      sep = q.indexOf("=");
-      args[q.substr(0, sep)] = decodeURIComponent(q.substr(sep + 1));
+      var sep = q.indexOf("=");
+      var arg = q.substr(0, sep);
+      var val = decodeURIComponent(q.substr(sep + 1));
+      if (types.hasOwnProperty(arg)) {
+        if (types[arg] === "number") {
+          var n = flexo.parse_number(val);
+          args[arg] = isNaN(n) ? val : n;
+        } else if (types[arg] === "boolean") {
+          args[arg] = flexo.is_true(val);
+        } else {
+          args[arg] = val;
+        }
+      } else {
+        args[arg] = val;
+      }
     });
     return args;
   };
