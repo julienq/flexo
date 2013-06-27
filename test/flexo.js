@@ -22,19 +22,6 @@
     it("is defined", function () {
       assert.isFunction(Function.prototype.bind, "bind is a function");
     });
-    var that = { x: 1, y: 2 };
-    var f = function (a, b) {
-      return this.x + this.y + a + b;
-    }.bind(that, 3);
-    if (Function.prototype.bind.native === false) {
-      it("is overridden by flexo", function () {
-        assert.strictEqual(f(4), 10, "bound to the right parameters");
-      });
-    } else {
-      it("is native", function () {
-        assert.strictEqual(f(4), 10, "bound to the right parameters");
-      });
-    }
   });
 
   describe("Objects", function () {
@@ -740,12 +727,12 @@
     });
 
     if (typeof window === "object") {
-      describe("flexo.request_animation_frame", function () {
+      describe("requestAnimationFrame", function () {
         it("binds the prefixed requestAnimationFrame or uses setTimeout as fallback", function () {
-          assert.ok(typeof flexo.request_animation_frame === "function");
+          assert.ok(typeof window.requestAnimationFrame == "function");
         });
-        it("also flexo.cancel_animation_frame", function () {
-          assert.ok(typeof flexo.cancel_animation_frame === "function");
+        it("also cancelAnimationFrame", function () {
+          assert.ok(typeof window.cancelAnimationFrame == "function");
         });
       });
     }

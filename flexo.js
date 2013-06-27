@@ -51,7 +51,7 @@ if (typeof Function.prototype.bind !== "function") {
 
   // requestAnimationFrame
   if (browserp && !window.requestAnimationFrame) {
-    window.request_animation_frame = (window.webkitRequestAnimationFrame ||
+    window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
       window.mozRequestAnimationFrame || window.msRequestAnimationFrame ||
       function (f) {
         return window.setTimeout(function () {
