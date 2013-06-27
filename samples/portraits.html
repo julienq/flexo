@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Portraits</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="portraits.css">
+  </head>
+  <body>
+    <div id="loading">
+      LOADING
+    </div>
+    <div id="head">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+    <script src="../flexo.js"></script>
+    <script>
+"use strict";
+
+var URL = "https://dl.dropboxusercontent.com/u/7465599/romulusetrem.us/media/images/randomhead/portraits/%0.png";
+
+var args = flexo.get_args({ n: 46, par: true });
+var urn = new flexo.Urn;
+for (var i = 0; i < args.n; ++i) {
+  urn.add(i + 1);
+}
+
+function show_image(promise) {
+  return promise.then(function (img) {
+    img.parentNode.classList.remove("hidden");
+  });
+}
+
+var promises = Array.prototype.map.call(document.querySelectorAll("#head div"),
+  function (div) {
+    div.classList.add("hidden");
+    var img =
+      div.appendChild(flexo.$img({ src: URL.fmt(flexo.pad(urn.pick(), 2)) }));
+    var promise = new flexo.Promise;
+    if (img.complete) {
+      promise.fulfill(img);
+    } else {
+      img.onload = function () {
+        promise.fulfill(img);
+      }
+    }
+    return promise;
+  });
+
+(args.par ?
+  new flexo.Par(promises.map(show_image)) :
+  new flexo.Promise().fulfill().each(promises, show_image)).then(function () {
+    var loading = document.getElementById("loading");
+    loading.parentNode.removeChild(loading);
+  });
+
+    </script>
+  </body>
+</html>

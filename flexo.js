@@ -30,6 +30,7 @@ if (typeof Function.prototype.bind !== "function") {
   var foreach = Array.prototype.forEach;
   var map = Array.prototype.map;
   var push = Array.prototype.push;
+  var reduce = Array.prototype.reduce;
   var slice = Array.prototype.slice;
   var splice = Array.prototype.splice;
 
@@ -76,8 +77,9 @@ if (typeof Function.prototype.bind !== "function") {
   // Define a property named `name` on object `obj` and make it read-only (i.e.
   // it only has a get.)
   flexo.make_readonly = function (obj, name, get) {
-    Object.defineProperty(obj, name, { enumerable: true,
-      get: typeof get === "function" ? get : function () { return get; }
+    Object.defineProperty(obj, name, {
+      enumerable: true,
+      get: flexo.funcify(get)
     });
   };
 
@@ -344,7 +346,7 @@ if (typeof Function.prototype.bind !== "function") {
     flexo.make_property(this, "array", function (a_) {
       this.empty();
       return a_;
-    }, a);
+    }, a || []);
     this.non_repeatable = !!non_repeatable;
   };
 
@@ -372,6 +374,14 @@ if (typeof Function.prototype.bind !== "function") {
       delete this.remaining;
       delete this.last_pick;
       return this;
+    },
+
+    // Add an item to the urn
+    add: function (item) {
+      this.array.push(item);
+      if (this.remaining) {
+        this.remaining.push(item);
+      }
     }
 
   };
@@ -636,9 +646,7 @@ if (typeof Function.prototype.bind !== "function") {
 
   // Turn a value into a 0-ary function returning that value
   flexo.funcify = function (x) {
-    return function () {
-      return x;
-    };
+    return typeof x == "function" ? x : function () { return x; };
   };
 
   // Identity function
@@ -699,6 +707,14 @@ if (typeof Function.prototype.bind !== "function") {
 
     reject: function (reason) {
       return resolve_promise.call(this, "reason", reason);
+    },
+
+    each: function (xs, f) {
+      return reduce.call(xs, function (p, x) {
+        return p.then(function (v) {
+          return f(x, v);
+        });
+      }, this);
     }
 
   };
@@ -738,6 +754,43 @@ if (typeof Function.prototype.bind !== "function") {
     this._queue = [];
   }
 
+  flexo.Par = function (array, tolerate_rejections) {
+    var promise = this._promise = new flexo.Promise;
+    var pending = 0;
+    var result = new Array(array.length);
+    flexo.make_readonly(this, "pending", function () {
+      return pending > 0;
+    });
+    var check_done = function (decr) {
+      pending -= decr;
+      if (pending == 0) {
+        promise.fulfill(result);
+      }
+    };
+    array.forEach(function (p, i) {
+      if (p && typeof p.then == "function") {
+        ++pending;
+        p.then(function (value) {
+          result[i] = value;
+          check_done(1);
+        }, function (reason) {
+          if (!!tolerate_rejections) {
+            result[i] = reason;
+            check_done(1);
+          } else {
+            promise.reject(reason);
+          }
+        });
+      } else {
+        result[i] = p;
+      }
+    });
+    check_done(0);
+  };
+
+  flexo.Par.prototype.then = function (on_fulfilled, on_rejected) {
+    return this._promise.then(on_fulfilled, on_rejected);
+  };
 
   // DOM
 
