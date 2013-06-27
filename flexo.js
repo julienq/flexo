@@ -1,3 +1,27 @@
+"use strict";
+
+// Simple format function for messages and templates. Use %0, %1... as slots
+// for parameters; %(n) can also be used to avoid possible ambiguities (e.g.
+// "x * 10 = %(0)0".) %% is also replaced by %. Null and undefined are
+// replaced by an empty string.
+String.prototype.fmt = function () {
+  var args = arguments;
+  return this.replace(/%(\d+|%|\((\d+)\))/g, function (_, p, pp) {
+    var p_ = parseInt(pp || p, 10);
+    return p === "%" ? "%" : args[p_] == null ? "" : args[p_];
+  });
+};
+
+if (typeof Function.prototype.bind !== "function") {
+  Function.prototype.bind = function (x) {
+    var f = this;
+    var args = slice.call(arguments, 1);
+    return function () {
+      return f.apply(x, args.concat(slice.call(arguments)));
+    };
+  };
+}
+
 (function (flexo) {
   "use strict";
 
@@ -9,20 +33,34 @@
   var slice = Array.prototype.slice;
   var splice = Array.prototype.splice;
 
-  var browserp = typeof window === "object";
+  var browserp = typeof window == "object";
+  var global_ = browserp ? window : global;
 
   // Define π as a global
-  (browserp ? window : global).π = Math.PI;
+  global_.π = Math.PI;
 
-  if (typeof Function.prototype.bind !== "function") {
-    Function.prototype.bind = function (x) {
-      var f = this;
-      var args = slice.call(arguments, 1);
-      return function () {
-        return f.apply(x, args.concat(slice.call(arguments)));
-      };
+  // setImmediate and clearImmediate
+  if (!global_.setImmediate) {
+    global_.setImmediate = function (f) {
+      return setTimeout(f, 0);
     };
-    Function.prototype.bind.native = false;
+    global_.clearImmediate = function (id) {
+      clearTimeout(id);
+    };
+  }
+
+  // requestAnimationFrame
+  if (browserp && !window.requestAnimationFrame) {
+    window.request_animation_frame = (window.webkitRequestAnimationFrame ||
+      window.mozRequestAnimationFrame || window.msRequestAnimationFrame ||
+      function (f) {
+        return window.setTimeout(function () {
+          f(Date.now());
+        }, 15);
+      }).bind(window);
+    window.cancelAnimationFrame = (window.webkitCancelAnimationFrame ||
+      window.mozCancelAnimationFrame || window.msCancelAnimationFrame ||
+      window.clearTimeout).bind(window);
   }
 
 
@@ -44,9 +82,10 @@
   };
 
   // Define a property named `name` on object `obj` with the custom setter `set`
-  // The setter gets three parameters (<new value>, <current value>) and returns
-  // the new value to be set. An initial value may be provided, which does not
-  // trigger the setter.
+  // The setter gets three parameters (<new value>, <current value>, <cancel>)
+  // and returns the new value to be set. An initial value may be provided,
+  // which does not trigger the setter. `fail` may be called with a truthy value
+  // to cancel the setter.
   flexo.make_property = function (obj, name, set, value) {
     Object.defineProperty(obj, name, { enumerable: true,
       get: function () { return value; },
@@ -62,87 +101,17 @@
     });
   };
 
-  // Pattern matching
-  //   * null
-  //   * undefined
-  //   * boolean / true, false
-  //   * number / literal number
-  //   * string / literal string
-  flexo.match = function (t, pattern) {
-    if (flexo.match.hasOwnProperty(pattern)) {
-      return flexo.match[pattern](t);
+  // Safe call to toString(); when obj is null or undefined, return an empty
+  // string.
+  flexo.safe_string = function (obj) {
+    if (obj == null) {
+      return "";
     }
-    if (pattern === "true") {
-      return t === true;
-    }
-    if (pattern === "false") {
-      return t === false;
-    }
-    var m;
-    if (m = pattern.match(/^(["'])([^(?:\1|\\.)]*)\1$/)) {
-      return t === m[2].replace(/\\(.)/g, "$1");
-    }
-    return flexo.match.number(t, parseFloat(pattern));
-  };
-
-  flexo.match_literal = function (t, literal) {
-    var type = typeof literal;
-    return type === "object" ?
-      Array.isArray(t) ? flexo.match.array(t, literal) :
-        flexo.match.object(t, literal) :
-      flexo.match[type](t, literal);
-  };
-
-  flexo.match.null = function (t) {
-    return t === null;
-  };
-
-  flexo.match.undefined = function (t) {
-    return t === undefined;
-  };
-
-  flexo.match.boolean = function (t, b) {
-    return typeof b === "boolean" ? t === b : typeof t === "number";
-  };
-
-  flexo.match.number = function (t, n) {
-    return typeof n === "number" ? t === n : typeof t === "number";
-  };
-
-  flexo.match.string = function (t, s) {
-    return typeof s === "string" ? t === s : typeof t === "string";
-  };
-
-  flexo.match.array = function (t, a) {
-    if (Array.isArray(a)) {
-      var n = a.length;
-      if (n !== t.length) {
-        return false;
-      }
-      for (var i = 0, n = a.length; i < n; ++i) {
-        if (!flexo.match_literal(t[i], a[i])) {
-          return false;
-        }
-      }
-      return true;
-    }
-    return Array.isArray(t);
+    return obj.toString.apply(obj, slice.call(arguments, 1));
   };
 
 
   // Strings
-
-  // Simple format function for messages and templates. Use %0, %1... as slots
-  // for parameters; %(n) can also be used to avoid possible ambiguities (e.g.
-  // "x * 10 = %(0)0".) %% is also replaced by %. Null and undefined are
-  // replaced by an empty string.
-  String.prototype.fmt = function () {
-    var args = arguments;
-    return this.replace(/%(\d+|%|\((\d+)\))/g, function (_, p, pp) {
-      var p_ = parseInt(pp || p, 10);
-      return p === "%" ? "%" : args[p_] == null ? "" : args[p_];
-    });
-  };
 
   // Chop the last character of a string iff it's a newline
   flexo.chomp = function (string) {
@@ -152,7 +121,7 @@
   // Get a true or false value from a string; true if the string matches "true"
   // in case-insensitive, whitespace-tolerating way
   flexo.is_true = function (string) {
-    return typeof string === "string" && string.trim().toLowerCase() === "true";
+    return flexo.safe_trim(string).toLowerCase() === "true";
   };
 
   // Pad a string to the given length with the given padding (defaults to 0)
@@ -168,11 +137,25 @@
     return l > 0 ? (Array(l).join(padding)) + string : string;
   };
 
-  // Quote a string, escaping quotes properly. Uses " by default, but can be
-  // changed to '
+  // Quote a string, escaping quotes and newlines properly. Uses " by default,
+  // but can be changed to '
   flexo.quote = function (string, q) {
     q = q || '"';
-    return "%0%1%0".fmt(q, string.replace(new RegExp(q, "g"), "\\" + q));
+    return "%0%1%0".fmt(q, string.replace(new RegExp(q, "g"), "\\" + q)
+        .replace(/\n/g, "\\n"));
+  };
+
+  // Trim a string, or return the empty string if the argument was not a string
+  // (for instance, null or undefined.)
+  flexo.safe_trim = function (maybe_string) {
+    return typeof maybe_string == "string" ? maybe_string.trim() : "";
+  };
+
+  // Parse a number, using parseFloat first but defaulting to parseInt for
+  // hexadecimal values (no octal parsing is done.)
+  flexo.to_number = function (string) {
+    var f = parseFloat(string);
+    return f == 0 ? parseInt(string) : f;
   };
 
   // Convert a number to roman numerals (integer part only; n must be positive
@@ -354,12 +337,23 @@
     return shuffled;
   };
 
-  // Pick random elements from an array and remove them from the array. When the
-  // array is empty, recreate the initial array. The urn can also be emptied at
-  // any moment, which resets is state completely.
-  flexo.Urn = {
+  // Create a new urn to pick from. The first argument is the array for the urn,
+  // then a flag to prevent successive repeating values when the urn is refilled
+  // (defaults to false.)
+  flexo.Urn = function (a, non_repeatable) {
+    flexo.make_property(this, "array", function (a_) {
+      this.empty();
+      return a_;
+    }, a);
+    this.non_repeatable = !!non_repeatable;
+  };
+
+  flexo.Urn.prototype = {
+
+    // Pick random elements from an array and remove them from the array. When
+    // the array is empty, recreate the initial array.
     pick: function () {
-      if (!this.remaining || this.remaining.length === 0) {
+      if (!this.remaining || this.remaining.length == 0) {
         this.remaining = slice.call(this.array);
       }
       var i = flexo.random_int(this.remaining.length - 1);
@@ -371,24 +365,15 @@
       this.last_pick = this.remaining.splice(i, 1)[0];
       return this.last_pick;
     },
+
+    // The urn can also be emptied at any moment, which resets is state
+    // completely.
     empty: function () {
       delete this.remaining;
       delete this.last_pick;
       return this;
     }
-  };
 
-  // Create a new urn to pick from. The first argument is the array for the urn,
-  // then a flag to prevent successive repeating values when the urn is refilled
-  // (defaults to false.)
-  flexo.urn = function (a, non_repeatable) {
-    var urn = Object.create(flexo.Urn);
-    flexo.make_property(urn, "array", function (a_) {
-      this.empty();
-      return a_;
-    }, a);
-    urn.non_repeatable = !!non_repeatable;
-    return urn;
   };
 
   // Return all the values of an object (presumably used as a dictionary)
@@ -507,11 +492,13 @@
     return flexo.unsplit_uri(uri);
   };
 
-  // Make an XMLHttpRequest with optional params and a callback when done
-  flexo.ez_xhr = function (uri, params, f) {
-    var req = new XMLHttpRequest();
-    if (f === undefined) {
-      f = params;
+  // Make an XMLHttpRequest with optional params and return a promise
+  flexo.ez_xhr = function (uri, params) {
+    var req = new XMLHttpRequest;
+    if (typeof uri == "object") {
+      params = uri;
+      uri = params.uri;
+    } else if (typeof params != "object") {
       params = {};
     }
     req.open(params.method || "GET", uri);
@@ -523,19 +510,18 @@
         req.setRequestHeader(h, params.headers[h]);
       }
     }
-    req.onload = req.onerror = function () { f(req); };
+    var promise = new flexo.Promise;
+    req.onload = function () {
+      if (req.response != null) {
+        promise.fulfill(req.response);
+      } else {
+        promise.reject({ reason: "missing response", request: req });
+      }
+    };
+    req.onerror = promise.reject.bind(promise, { reason: "XHR error",
+      request: req });
     req.send(params.data || "");
-  };
-
-  // Parse a string as a float, or failing that, as an integer. This can handle
-  // cases like hexadicemal numbers, which would only return 0 with parseFloat.
-  flexo.parse_number = function (str) {
-    var f = parseFloat(str);
-    if (f === 0) {
-      var i = parseInteger(str);
-      return isNaN(i) ? f : i;
-    }
-    return f;
+    return promise;
   };
 
   // Get args from an URI
@@ -560,7 +546,7 @@
       var val = decodeURIComponent(q.substr(sep + 1));
       if (types.hasOwnProperty(arg)) {
         if (types[arg] === "number") {
-          var n = flexo.parse_number(val);
+          var n = flexo.to_number(val);
           args[arg] = isNaN(n) ? val : n;
         } else if (types[arg] === "boolean") {
           args[arg] = flexo.is_true(val);
@@ -630,12 +616,6 @@
 
   // Functions and Asynchronicity
 
-  Function.prototype.delay = function () {
-    setTimeout(function () {
-      this.apply(this, arguments);
-    }.bind(this), 0);
-  };
-
   // Return a function that discards its arguments. An optional parameter allows
   // to keep at most n arguments (defaults to 0 of course.)
   flexo.discard = function (f, n) {
@@ -652,6 +632,13 @@
       throw "fail";
     }
     return false;
+  };
+
+  // Turn a value into a 0-ary function returning that value
+  flexo.funcify = function (x) {
+    return function () {
+      return x;
+    };
   };
 
   // Identity function
@@ -689,59 +676,66 @@
     return [this, arguments];
   };
 
-  // Seq object for chaining asynchronous calls
-  flexo.Seq = {};
+  // Promises (see http://promisesaplus.com/)
+  flexo.Promise = function () {
+    this._queue = [];
+    this._resolved = resolved_promise.bind(this);
+  };
 
-  function schedule_flush () {
-    if (!this.__flush) {
-      this.__flush = this.flush.bind(this);
-      this.__timeout = setTimeout(this.__flush, 0);
+  flexo.Promise.prototype = {
+
+    then: function (on_fulfilled, on_rejected) {
+      var p = new flexo.Promise;
+      this._queue.push([p, on_fulfilled, on_rejected]);
+      if (this.hasOwnProperty("value") || this.hasOwnProperty("reason")) {
+        setImmediate(this._resolved);
+      }
+      return p;
+    },
+
+    fulfill: function (value) {
+      return resolve_promise.call(this, "value", value);
+    },
+
+    reject: function (reason) {
+      return resolve_promise.call(this, "reason", reason);
     }
+
+  };
+
+  function resolve_promise(resolution, value) {
+    if (!this.hasOwnProperty("value") && !this.hasOwnProperty("reason")) {
+      this[resolution] = value;
+      this._resolved();
+    }
+    return this;
   }
 
-  // Add a thunk to the queue
-  flexo.Seq.add_thunk = function (thunk) {
-    schedule_flush.call(this);
-    push.call(thunk[1], this.__flush);
-    this.thunks.push(thunk);
-    return this;
-  };
-
-  // Start flushing the queue; this is called automatically by a timer or may be
-  // called explicitly to control when flushing starts
-  flexo.Seq.flush = function () {
-    if (this.__timeout) {
-      clearTimeout(this.__timeout);
-      delete this.__timeout;
+  function resolved_promise() {
+    var resolution = this.hasOwnProperty("value") ? "value" : "reason";
+    var on = this.hasOwnProperty("value") ? 1 : 2;
+    for (var i = 0; i < this._queue.length; ++i) {
+      var p = this._queue[i];
+      if (typeof p[on] == "function") {
+        try {
+          var v = p[on](this[resolution]);
+          if (v && typeof v.then == "function") {
+            v.then(function (value) {
+              p[0].fulfill(value);
+            }, function (reason) {
+              p[0].reject(reason);
+            });
+          } else {
+            p[0].fulfill(v);
+          }
+        } catch (e) {
+          p[0].reject(e);
+        }
+      } else {
+        p[0][resolution == "value" ? "fulfill" : "reject"](this[resolution]);
+      }
     }
-    if (this.thunks.length > 0) {
-      return apply_thunk(this.thunks.shift());
-    }
-    delete this.__flush;
-  };
-
-  // Create a new empty Seq object
-  flexo.seq = function (thunks) {
-    var seq = Object.create(flexo.Seq);
-    seq.thunks = Array.isArray(thunks) ? thunks : [];
-    if (seq.thunks.length > 0) {
-      schedule_flush.call(seq);
-    }
-    return seq;
-  };
-
-
-  if (browserp) {
-    flexo.request_animation_frame = (window.requestAnimationFrame ||
-      window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
-      window.msRequestAnimationFrame || function (f) {
-        return window.setTimeout(function () {
-          f(Date.now());
-        }, 16);
-      }).bind(window);
-    flexo.cancel_animation_frame = (window.cancelAnimationFrame ||
-      window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame ||
-      window.msCancelAnimationFrame || window.clearTimeout).bind(window);
+    this._queue = [];
   }
 
 

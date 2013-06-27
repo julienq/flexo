@@ -385,9 +385,9 @@
       it("replaces the first instance of old_item in the array with new_item, and return old_item if it was present");
     });
 
-    describe("flexo.urn(array, [non_repeatable])", function () {
+    describe("new flexo.Urn(array, [non_repeatable])", function () {
       var a = [1, 2, 3, 4, 5];
-      var u = flexo.urn(a);
+      var u = new flexo.Urn(a);
       it("creates a new urn from a given array", function () {
         assert.deepEqual(u.array, a);
       });
@@ -401,7 +401,7 @@
         assert.ok(a.indexOf(p) >= 0);
       });
       it("if the non_repeatable flag is set, then the next value after refilling the urn will not be different from the last pick (provided that the urn has at least two items to pick from", function () {
-        var v = flexo.urn(a, true);
+        var v = new flexo.Urn(a, true);
         var picked = [];
         for (var i = 0; i < a.length; ++i) {
           picked.push(v.pick());
@@ -571,7 +571,7 @@
         var argstr = "href=../apps/logo.xml&x=2&y=4";
         var args = flexo.get_args({ x: 1, z: 6 }, argstr);
         assert.strictEqual("../apps/logo.xml", args.href);
-        assert.strictEqual("2", args.x);
+        assert.strictEqual(2, args.x);
         assert.strictEqual("4", args.y);
         assert.strictEqual(6, args.z);
       });
@@ -737,30 +737,6 @@
 
     describe("Trampoline calls", function () {
       it("todo");
-    });
-
-    describe("flexo.seq", function () {
-      it("executes asynchronous commands in sequence", function (done) {
-        var seq = flexo.seq();
-        var timeout = function (k) {
-          setTimeout(k, 10);
-        };
-        for (var i = 0; i < 10; ++i) {
-          seq.add_thunk(timeout.get_thunk());
-        }
-        seq.add_thunk(flexo.discard(done).get_thunk());
-      });
-      it("starts flushing automatically but can be started manually as well by calling seq.flush()", function (done) {
-        var seq = flexo.seq();
-        var timeout = function (k) {
-          setTimeout(k, 10);
-        };
-        for (var i = 0; i < 10; ++i) {
-          seq.add_thunk(timeout.get_thunk());
-        }
-        seq.add_thunk(flexo.discard(done).get_thunk());
-        seq.flush();
-      });
     });
 
     if (typeof window === "object") {

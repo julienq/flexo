@@ -14,26 +14,30 @@ to get an idea of what you can do.
 ## TODO
 
 * Write documentation
-* Seq improvements: foreach, &c. (also par?)
-* Randomness: drunk, seeded generator, &c.
+* Randomness: noise, drunk, seeded generator, &c.
 
 
 ## Changes
 
 ### New in v0.2.0 (in progress)
 
-* renamed ~~**cancel**~~ to **fail**; not passed as extra argument in the setter
-  of **make_property**.
+* **quote** escapes newlines;
+* **ez_xhr** returns a promise and fulfills it with the response of the request;
+  ottherwise, rejects it with an object containing the request and an additional
+  reason.
+* Removed **Seq** and implemented [**Promise**](http://promises-aplus.github.io/promises-spec/), with separate tests.
+* **safe_string** to allow toString() to be called safely or null or undefined
+  values (TODO: test)
+* **funcify** to turn a value into a 0-ary function returning that value (TODO:
+  test)
+* renamed **cancel** to **fail**;
 * **remove_first_from_array** removes the first element that matches a
   predicate;
 * Global **π** is set to Math.PI;
 * **hcaErof** is forEach in reverse (TODO: test);
-* **Function.delay** delays a function execution (TODO: test);
 * **Function.discard** returns a function that discards its arguments;
 * **String.fmt** converts %n to an integer (so %03 is the same as %3);
 * **String.fmt** accepts the form %(n) to avoid ambiguites (e.g. "%(0)0");
-* **Seq.add_thunk** replaces **Seq.add**;
-* **seq()** can be initialized with a list of thunks.
 
 ### New in v0.1.5
 
