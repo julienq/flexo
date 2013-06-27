@@ -19,7 +19,7 @@ to get an idea of what you can do.
 
 ## Changes
 
-### New in v0.2.0 (in progress)
+### New in v0.2.0
 
 * Removed **Seq** and implemented [**Promise**](http://promises-aplus.github.io/promises-spec/), with separate tests.
 * **promise_img** to create a promise for an img element;

@@ -18,20 +18,26 @@
     <script>
 "use strict";
 
+// URL pattern for images (name 01.png, 02.png, ... 46.png)
+// Art by Jonathan Larabie (http://jonathanlarabie.net/) and
+// Romulus ou Remus (http://romulusetrem.us/)
 var URL = "https://dl.dropboxusercontent.com/u/7465599/romulusetrem.us/media/images/randomhead/portraits/%0.png";
 
-var args = flexo.get_args({ n: 46, par: true });
+// Add ?seq=false to the URL to get parallel rather than sequential behavior
+var args = flexo.get_args({ n: 46, seq: true });
 var urn = new flexo.Urn;
 for (var i = 0; i < args.n; ++i) {
   urn.add(i + 1);
 }
 
+// Show an image after it was loaded succesfully
 function show_image(promise) {
   return promise.then(function (img) {
     promise.div.appendChild(img);
   });
 }
 
+// Make a promise to load images for all divs in the #head element
 var promises = Array.prototype.map.call(document.querySelectorAll("#head div"),
   function (div) {
     var promise = flexo.promise_img(URL.fmt(flexo.pad(urn.pick(), 2)));
@@ -39,12 +45,15 @@ var promises = Array.prototype.map.call(document.querySelectorAll("#head div"),
     return promise;
   });
 
-(args.par ?
-  new flexo.Par(promises.map(show_image)) :
-  new flexo.Promise().fulfill().each(promises, show_image)).then(function () {
-    var loading = document.getElementById("loading");
-    loading.parentNode.removeChild(loading);
-  });
+(args.seq ?
+  // Sequential display: apply show_image to all promises in document order
+  new flexo.Promise().fulfill().each(promises, show_image) :
+  // Parallel display: apply show_image to promises as soon as they load
+  new flexo.Par(promises.map(show_image))
+).then(function () {
+  // Remove the loading message once all images have loaded
+  flexo.safe_remove(document.getElementById("loading"));
+});
 
     </script>
   </body>
