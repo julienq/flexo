@@ -28,23 +28,14 @@ for (var i = 0; i < args.n; ++i) {
 
 function show_image(promise) {
   return promise.then(function (img) {
-    img.parentNode.classList.remove("hidden");
+    promise.div.appendChild(img);
   });
 }
 
 var promises = Array.prototype.map.call(document.querySelectorAll("#head div"),
   function (div) {
-    div.classList.add("hidden");
-    var img =
-      div.appendChild(flexo.$img({ src: URL.fmt(flexo.pad(urn.pick(), 2)) }));
-    var promise = new flexo.Promise;
-    if (img.complete) {
-      promise.fulfill(img);
-    } else {
-      img.onload = function () {
-        promise.fulfill(img);
-      }
-    }
+    var promise = flexo.promise_img(URL.fmt(flexo.pad(urn.pick(), 2)));
+    promise.div = div;
     return promise;
   });
 

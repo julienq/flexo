@@ -715,7 +715,7 @@ if (typeof Function.prototype.bind !== "function") {
           return f(x, v);
         });
       }, this);
-    }
+    },
 
   };
 
@@ -753,6 +753,24 @@ if (typeof Function.prototype.bind !== "function") {
     }
     this._queue = [];
   }
+
+  // Create a promise that loads an image
+  flexo.promise_img = function (src) {
+    var promise = new flexo.Promise;
+    var img = new Image;
+    img.src = src;
+    if (img.complete) {
+      promise.fulfill(img);
+    } else {
+      img.onload = function () {
+        promise.fulfill(img);
+      };
+      img.onerror = function (e) {
+        promise.reject(e);
+      }
+    }
+    return promise;
+  };
 
   flexo.Par = function (array, tolerate_rejections) {
     var promise = this._promise = new flexo.Promise;

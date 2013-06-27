@@ -21,11 +21,13 @@ to get an idea of what you can do.
 
 ### New in v0.2.0 (in progress)
 
+* Removed **Seq** and implemented [**Promise**](http://promises-aplus.github.io/promises-spec/), with separate tests.
+* **promise_img** to create a promise for an img element;
+* **Par** to manage a list of promises;
 * **quote** escapes newlines;
 * **ez_xhr** returns a promise and fulfills it with the response of the request;
   ottherwise, rejects it with an object containing the request and an additional
   reason.
-* Removed **Seq** and implemented [**Promise**](http://promises-aplus.github.io/promises-spec/), with separate tests.
 * **safe_string** to allow toString() to be called safely or null or undefined
   values (TODO: test)
 * **funcify** to turn a value into a 0-ary function returning that value (TODO:
