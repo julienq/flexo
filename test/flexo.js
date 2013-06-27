@@ -3,25 +3,25 @@
 
   var assert = typeof require === "function" && require("chai").assert ||
     window.chai.assert;
-  var flexo = typeof require === "function" && require("flexo") || window.flexo;
+  var flexo = typeof require === "function" && require("../flexo.js") ||
+    window.flexo;
+
+  describe("Flexo", function () {
+    it("is defined", function () {
+      assert.isObject(flexo);
+    });
+    it("is up to version %0".fmt(flexo.VERSION), function () {
+      assert.isString(flexo.VERSION);
+    });
+    it("defines π to Math.PI too", function () {
+      assert.strictEqual(π, Math.PI);
+    });
+  });
 
   describe("Function.prototype.bind", function () {
     it("is defined", function () {
       assert.isFunction(Function.prototype.bind, "bind is a function");
     });
-    var that = { x: 1, y: 2 };
-    var f = function (a, b) {
-      return this.x + this.y + a + b;
-    }.bind(that, 3);
-    if (Function.prototype.bind.native === false) {
-      it("is overridden by flexo", function () {
-        assert.strictEqual(f(4), 10, "bound to the right parameters");
-      });
-    } else {
-      it("is native", function () {
-        assert.strictEqual(f(4), 10, "bound to the right parameters");
-      });
-    }
   });
 
   describe("Objects", function () {
@@ -66,17 +66,17 @@
     describe("flexo.make_property(obj, name, set)", function () {
       var x = {};
       it("defines a property named name on object obj with the custom setter set", function () {
-        flexo.make_property(x, "foo", function (v, current, cancel) {
-          cancel(v === current);
+        flexo.make_property(x, "foo", function (v, current) {
+          flexo.fail(v === current);
           return v + "!";
         });
         assert.ok(x.hasOwnProperty("foo"), "x has property \"foo\"");
       });
-      it("the setter gets two parameters (<new value>, <current value>, <cancel>) and returns the new value to be set", function () {
+      it("the setter gets two parameters (<new value>, <current value>) and returns the new value to be set", function () {
         x.foo = "bar";
         assert.strictEqual(x.foo, "bar!", "x.foo = \"bar!\"");
       });
-      it("if the setter calls <cancel> with no value or a true-y value, then the value is not updated", function () {
+      it("the setter may call flexo.fail() with no value or a true-y value, so that the value is not updated", function () {
         x.foo = "bar!";
         assert.strictEqual(x.foo, "bar!", "x.foo was not updated");
       });
@@ -101,6 +101,12 @@
       });
       it("replaces %% with %", function () {
         assert.strictEqual("%%0 = %foo", "%%%%0 = %%%0".fmt("foo"));
+      });
+      it("accepts parens to disambiguate input, e.g. \"x * 10 = %(0)0\".fmt(x)", function () {
+        assert.strictEqual("x * 10 = %(0)0".fmt(12), "x * 10 = 120");
+      });
+      it("parses the pattern number as a base-10 integer, so that %03 is the same as %3", function () {
+        assert.strictEqual("%03".fmt(0, 1, 2, 3, 4, 5, 6, 7), "3");
       });
     });
 
@@ -143,6 +149,17 @@
       it("is useful to create strings with a repeated pattern", function () {
         assert.strictEqual(flexo.pad("", 10, "*"), "**********");
         assert.strictEqual(flexo.pad("", 8, "xo"), "xoxoxoxoxoxoxoxo");
+      });
+    });
+
+    describe("flexo.quote(string, [quotes='\"'])", function () {
+      it("Quotes a string, escaping quotes inside the string", function () {
+        assert.strictEqual(flexo.quote("Hello, \"World!\""),
+          "\"Hello, \\\"World!\\\"\"");
+      });
+      it("Uses double-quotes by default, but can be passed single quote as a second argument", function () {
+        assert.strictEqual(flexo.quote("Hello, \"World!\"", "'"),
+          "'Hello, \"World!\"'");
       });
     });
 
@@ -319,6 +336,24 @@
       });
     });
 
+    describe("flexo.remove_first_from_array(array, p, that)", function () {
+      it("removes the first occurrence of the item from the array that matches predicate p (called with that as this), and returns it",
+        function () {
+          var a = [1, 2, 3, 4, 2];
+          assert.strictEqual(flexo.remove_first_from_array(a,
+              function (x) { return x === 1; }), 1);
+          assert.deepEqual(a, [2, 3, 4, 2]);
+          assert.strictEqual(flexo.remove_first_from_array(a,
+              function (x) { return x === 2; }), 2);
+          assert.deepEqual(a, [3, 4, 2]);
+          assert.strictEqual(flexo.remove_first_from_array(a,
+              function (x) { return x === 5; }));
+          assert.deepEqual(a, [3, 4, 2]);
+          assert.strictEqual(flexo.remove_first_from_array(null,
+              function (x) { return x === 5; }));
+        });
+    });
+
     describe("flexo.remove_from_array(array, item)", function () {
       it("removes the first occurrence of the item from the array, if present and returns it",
         function () {
@@ -335,6 +370,37 @@
 
     describe("flexo.replace_in_array(array, old_item, new_item)", function () {
       it("replaces the first instance of old_item in the array with new_item, and return old_item if it was present");
+    });
+
+    describe("new flexo.Urn(array, [non_repeatable])", function () {
+      var a = [1, 2, 3, 4, 5];
+      var u = new flexo.Urn(a);
+      it("creates a new urn from a given array", function () {
+        assert.deepEqual(u.array, a);
+      });
+      it("picks an element with urn.pick(), refilling the urn with the original array once it becomes empty", function () {
+        var picked = [];
+        for (var i = 0; i < a.length; ++i) {
+          picked.push(u.pick());
+        }
+        assert.deepEqual(picked.sort(), a);
+        var p = u.pick();
+        assert.ok(a.indexOf(p) >= 0);
+      });
+      it("if the non_repeatable flag is set, then the next value after refilling the urn will not be different from the last pick (provided that the urn has at least two items to pick from", function () {
+        var v = new flexo.Urn(a, true);
+        var picked = [];
+        for (var i = 0; i < a.length; ++i) {
+          picked.push(v.pick());
+        }
+        assert.deepEqual(picked.sort(), a);
+        var last = picked[picked.lenght - 1];
+        for (var i = 0; i < 100; ++i) {
+          var p = v.pick();
+          assert.ok(p !== v);
+          v.remaining.push(p);
+        }
+      });
     });
 
     describe("flexo.values(dictionary)", function () {
@@ -492,7 +558,7 @@
         var argstr = "href=../apps/logo.xml&x=2&y=4";
         var args = flexo.get_args({ x: 1, z: 6 }, argstr);
         assert.strictEqual("../apps/logo.xml", args.href);
-        assert.strictEqual("2", args.x);
+        assert.strictEqual(2, args.x);
         assert.strictEqual("4", args.y);
         assert.strictEqual(6, args.z);
       });
@@ -556,19 +622,17 @@
 
     describe("flexo.notify(source, type, arguments={})", function () {
       it("sends an event notification of `type` on behalf of `source`", function (done) {
-        flexo.listen(source, "@test-notify", function () {
-          done();
-        });
-        flexo.notify(source, "@test-notify");
+        flexo.listen(source, "!test-notify", flexo.discard(done));
+        flexo.notify(source, "!test-notify");
       });
       it("sends additional arguments through the `arguments` object", function () {
-        flexo.listen(source, "@test-args", function (e) {
+        flexo.listen(source, "!test-args", function (e) {
           assert.strictEqual(e.source, source);
-          assert.strictEqual(e.type, "@test-args");
+          assert.strictEqual(e.type, "!test-args");
           assert.strictEqual(e.foo, 1);
           assert.strictEqual(e.bar, 2);
         });
-        flexo.notify(source, "@test-args", { foo: 1, bar: 2 });
+        flexo.notify(source, "!test-args", { foo: 1, bar: 2 });
       });
     });
 
@@ -610,28 +674,38 @@
 
   describe("Functions and Asynchronicity", function () {
 
-    describe("flexo.cancel([p])", function () {
-      it("throws a \"cancel\" exception when p is truthy (defaults to true)", function () {
+    describe("flexo.discard(f, [n=0])", function () {
+      it("returns a function that discards its arguments", function (done) {
+        flexo.discard(done)("augh!");
+      });
+      it("keeps at most n arguments if n is specified", function () {
+        assert.deepEqual("0 1 2 3".split(" ").map(flexo.discard(parseInt, 1)),
+          [0, 1, 2, 3]);
+      });
+    });
+
+    describe("flexo.fail([p])", function () {
+      it("throws a \"fail\" exception when p is truthy (defaults to true)", function () {
         try {
-          flexo.cancel();
+          flexo.fail();
         } catch (e) {
-          assert.strictEqual(e, "cancel");
+          assert.strictEqual(e, "fail");
         }
         try {
-          flexo.cancel(true);
+          flexo.fail(true);
         } catch (e) {
-          assert.strictEqual(e, "cancel");
+          assert.strictEqual(e, "fail");
         }
         try {
-          flexo.cancel("true-ish");
+          flexo.fail("true-ish");
         } catch (e) {
-          assert.strictEqual(e, "cancel");
+          assert.strictEqual(e, "fail");
         }
-        flexo.cancel(undefined);
+        flexo.fail(undefined);
         assert.ok(true);
       });
       it("returns false otherwise", function () {
-        assert.strictEqual(flexo.cancel(false) || "ok", "ok");
+        assert.strictEqual(flexo.fail(false) || "ok", "ok");
       });
     });
 
@@ -642,28 +716,23 @@
       });
     });
 
-    describe("flexo.seq", function () {
-      it("executes asynchronous commands in sequence", function (done) {
-        var seq = flexo.seq();
-        var timeout = function (k) {
-          setTimeout(k, 10);
-        };
-        for (var i = 0; i < 10; ++i) {
-          seq.add(timeout);
-        }
-        seq.add(function () {
-          done();
-        });
+    describe("flexo.nop", function () {
+      it("does nothing.", function () {
+        assert.ok(typeof flexo.nop === "function");
       });
     });
 
+    describe("Trampoline calls", function () {
+      it("todo");
+    });
+
     if (typeof window === "object") {
-      describe("flexo.request_animation_frame", function () {
+      describe("requestAnimationFrame", function () {
         it("binds the prefixed requestAnimationFrame or uses setTimeout as fallback", function () {
-          assert.ok(typeof flexo.request_animation_frame === "function");
+          assert.ok(typeof window.requestAnimationFrame == "function");
         });
-        it("also flexo.cancel_animation_frame", function () {
-          assert.ok(typeof flexo.cancel_animation_frame === "function");
+        it("also cancelAnimationFrame", function () {
+          assert.ok(typeof window.cancelAnimationFrame == "function");
         });
       });
     }

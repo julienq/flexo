@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+  <title>Gradients</title>
+  <rect width="100%" height="100%" fill="yellow"/>
+  <defs>
+    <linearGradient id="gradient">
+      <stop offset="0%" stop-color="black"/>
+      <stop offset="100%" stop-color="white"/>
+    </linearGradient>
+  </defs>
+  <svg/>
+  <script xlink:href="../flexo.js"/>
+  <script><![CDATA[
+
+"use strict";
+
+var args = flexo.get_args({ w: 16, h: 12, sz: 100 });
+
+var svg = document.querySelector("svg svg");
+svg.setAttribute("viewBox", "%0 %0 %1 %2".fmt(-args.sz / 2,
+  (args.w + 1) * args.sz, (args.h + 1) * args.sz));
+
+var rects = [];
+for (var y = 0; y < args.h; ++y) {
+  for (var x = 0; x < args.w; ++x) {
+    rects.push(flexo.$rect({ x: x * args.sz, y: y * args.sz,
+      width: args.sz, height: args.sz, fill: "url(#gradient)",
+      transform: "rotate(%0, %1, %2)".fmt(flexo.random_int(360),
+        (x + .5) * args.sz, (y + .5) * args.sz) }));
+  }
+}
+
+flexo.shuffle_array(rects).forEach(function(rect) {
+  svg.appendChild(rect);
+});
+
+  ]]></script>
+</svg>
+

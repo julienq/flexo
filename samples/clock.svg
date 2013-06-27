@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-200 -200 400 400"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+  <g id="face" fill="white" stroke="black" stroke-linecap="round">
+    <circle r="180"/>
+  </g>
+  <g stroke-linecap="round" stroke="black" transform="rotate(-90)">
+    <line x1="80" id="h_hand"/>
+    <line x1="140" id="m_hand"/>
+    <line x1="140" id="s_hand" stroke-dasharray="10 10"/>
+  </g>
+
+  <script xlink:href="../flexo.js"/>
+  <script><![CDATA[
+
+"use strict";
+
+var face = document.getElementById("face");
+for (var i = 0; i < 60; ++i) {
+  face.appendChild(flexo.$line({ y1: 170,
+    y2: i % 5 == 0 ? 150 : 160, transform: "rotate(%0)".fmt(i * 6) }));
+}
+
+var h_hand = document.getElementById("h_hand");
+var m_hand = document.getElementById("m_hand");
+var s_hand = document.getElementById("s_hand");
+var offset = new Date().getTimezoneOffset() / 60;
+
+var update_hands = function () {
+  var n = Date.now();
+  var h = (n / 3600000) % 24 - offset;
+  var m = (n / 60000) % 60;
+  var s = (n / 1000) % 60;
+  h_hand.setAttribute("transform", "rotate(%0)".fmt(h * 30));
+  m_hand.setAttribute("transform", "rotate(%0)".fmt(m * 6));
+  s_hand.setAttribute("transform", "rotate(%0)".fmt(s * 6));
+  requestAnimationFrame(update_hands);
+}
+update_hands();
+
+  ]]></script>
+
+</svg>
