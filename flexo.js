@@ -715,7 +715,7 @@ if (typeof Function.prototype.bind !== "function") {
           return f(x, v);
         });
       }, this);
-    },
+    }
 
   };
 
@@ -754,11 +754,20 @@ if (typeof Function.prototype.bind !== "function") {
     this._queue = [];
   }
 
-  // Create a promise that loads an image
-  flexo.promise_img = function (src) {
+  // Create a promise that loads an image. `attrs` is a dictionary of attribute
+  // for the image and should contain a `src` property, or can simply be the
+  // source attribute value itself. The promise has a pointer to the `img`
+  // element.
+  flexo.promise_img = function (attrs) {
     var promise = new flexo.Promise;
-    var img = new Image;
-    img.src = src;
+    var img = promise.img = new Image;
+    if (typeof attrs == "object") {
+      for (var attr in attrs) {
+        img.setAttribute(attr, attrs[attr]);
+      }
+    } else {
+      img.src = attrs;
+    }
     if (img.complete) {
       promise.fulfill(img);
     } else {

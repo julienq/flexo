@@ -11,13 +11,25 @@ forthcoming; [run the test page](http://romulusetrem.us/flexo/test/flexo.html)
 to get an idea of what you can do.
 
 
+## Samples
+
+* An [SVG clock](http://www.romulusetrem.us/flexo/samples/clock.svg)
+* [Random gradients](http://www.romulusetrem.us/flexo/samples/gradients.svg)
+* Random portraits, loading the images using promises either [in parallel](http://www.romulusetrem.us/flexo/samples/portraits.html) or [in sequence](http://www.romulusetrem.us/flexo/samples/portraits.html?par=false).
+
 ## TODO
 
 * Write documentation
+* setImmediate using 
 * Randomness: noise, drunk, seeded generator, &c.
 
 
 ## Changes
+
+### New in v0.2.1 (in progress)
+
+* **promise_img** takes an attributes object as argument which should contain a
+  src property (or simply a src string.)
 
 ### New in v0.2.0
 
@@ -39,7 +51,7 @@ to get an idea of what you can do.
 * **hcaErof** is forEach in reverse (TODO: test);
 * **Function.discard** returns a function that discards its arguments;
 * **String.fmt** converts %n to an integer (so %03 is the same as %3);
-* **String.fmt** accepts the form %(n) to avoid ambiguites (e.g. "%(0)0");
+* **String.fmt** accepts the form %(n) to avoid ambiguites (e.g. "%(0)0".)
 
 ### New in v0.1.5
 
@@ -73,3 +85,10 @@ to get an idea of what you can do.
 
 * separated **poly_points** to generate points for an existing element;
 * added tests.
+
+
+## Links
+
+Trampoline calls are adapted from 
+[http://github.com/spencertipping/js-in-ten-minutes](http://github.com/spencertipping/js-in-ten-minutes).
+
