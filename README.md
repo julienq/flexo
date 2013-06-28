@@ -20,7 +20,7 @@ to get an idea of what you can do.
 ## TODO
 
 * Write documentation
-* setImmediate using 
+* setImmediate using postMessage?
 * Randomness: noise, drunk, seeded generator, &c.
 
 
