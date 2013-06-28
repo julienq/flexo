@@ -20,7 +20,7 @@ to get an idea of what you can do.
 ## TODO
 
 * Write documentation
-* setImmediate using postMessage?
+* Missing tests (fix unlisten)
 * Randomness: noise, drunk, seeded generator, &c.
 
 
@@ -29,7 +29,7 @@ to get an idea of what you can do.
 ### New in v0.2.1 (in progress)
 
 * **asap** as a faster way to delay execution than setTimeout, using
-  setImmediate where available, window.postMessage otherwise;
+  setImmediate where available, or window.postMessage otherwise;
 * **promise_img** takes an attributes object as argument which should contain a
   src property (or simply a src string.)
 

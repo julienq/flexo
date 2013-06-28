@@ -626,9 +626,11 @@ if (typeof Function.prototype.bind !== "function") {
       var key = "asap{0}".fmt(Math.random());
       window.addEventListener("message", function (e) {
         if (e.data === key) {
-          var queue_ = queue.slice();
+          var q = queue.slice();
           queue = [];
-          queue_.forEach(function (f) { f(); });
+          for (var i = 0, n = q.length; i < n; ++i) {
+            q[i]();
+          }
         }
       }, false);
       return function (f) {
