@@ -40,16 +40,6 @@ if (typeof Function.prototype.bind !== "function") {
   // Define π as a global
   global_.π = Math.PI;
 
-  // setImmediate and clearImmediate
-  if (!global_.setImmediate) {
-    global_.setImmediate = function (f) {
-      return setTimeout(f, 0);
-    };
-    global_.clearImmediate = function (id) {
-      clearTimeout(id);
-    };
-  }
-
   // requestAnimationFrame
   if (browserp && !window.requestAnimationFrame) {
     window.requestAnimationFrame = (window.webkitRequestAnimationFrame ||
@@ -574,7 +564,7 @@ if (typeof Function.prototype.bind !== "function") {
   // Custom events
 
   function call_listener(listener, e) {
-    if (typeof listener.handleEvent === "function") {
+    if (typeof listener.handleEvent == "function") {
       listener.handleEvent.call(listener, e);
     } else {
       listener(e);
@@ -610,9 +600,11 @@ if (typeof Function.prototype.bind !== "function") {
     } else {
       e = source;
     }
-    if (e.source.hasOwnProperty(e.type)) {
-      e.source[e.type].slice().forEach(function (listener) {
-        call_listener(listener, e);
+    if (e.type in e.source) {
+      flexo.asap(function () {
+        e.source[e.type].slice().forEach(function (listener) {
+          call_listener(listener, e);
+        });
       });
     }
   };
@@ -625,6 +617,27 @@ if (typeof Function.prototype.bind !== "function") {
 
 
   // Functions and Asynchronicity
+
+  // Hack using postMessage to provide a setImmediate replacement; inspired by
+  // https://github.com/NobleJS/setImmediate
+  flexo.asap = global_.setImmediate ? global_.setImmediate.bind(global_) :
+    window.postMessage ? (function () {
+      var queue = [];
+      var key = "asap{0}".fmt(Math.random());
+      window.addEventListener("message", function (e) {
+        if (e.data === key) {
+          var queue_ = queue.slice();
+          queue = [];
+          queue_.forEach(function (f) { f(); });
+        }
+      }, false);
+      return function (f) {
+        queue.push(f);
+        window.postMessage(key, "*");
+      };
+    }()) : function (f) {
+      setTimeout(f, 0);
+    };
 
   // Return a function that discards its arguments. An optional parameter allows
   // to keep at most n arguments (defaults to 0 of course.)
@@ -696,7 +709,7 @@ if (typeof Function.prototype.bind !== "function") {
       var p = new flexo.Promise;
       this._queue.push([p, on_fulfilled, on_rejected]);
       if (this.hasOwnProperty("value") || this.hasOwnProperty("reason")) {
-        setImmediate(this._resolved);
+        flexo.asap(this._resolved);
       }
       return p;
     },

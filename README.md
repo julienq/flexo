@@ -28,6 +28,8 @@ to get an idea of what you can do.
 
 ### New in v0.2.1 (in progress)
 
+* **asap** as a faster way to delay execution than setTimeout, using
+  setImmediate where available, window.postMessage otherwise;
 * **promise_img** takes an attributes object as argument which should contain a
   src property (or simply a src string.)
 
@@ -91,4 +93,4 @@ to get an idea of what you can do.
 
 Trampoline calls are adapted from 
 [http://github.com/spencertipping/js-in-ten-minutes](http://github.com/spencertipping/js-in-ten-minutes).
-
+Asap is inspired by [https://github.com/NobleJS/setImmediate](https://github.com/NobleJS/setImmediate).

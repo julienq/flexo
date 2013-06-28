@@ -585,38 +585,47 @@
     var source = {};
 
     describe("flexo.listen(target, type, listener)", function () {
-      it("listens to events of `type` from `target` and executes the listener function", function () {
+      it("listens to events of `type` from `target` and executes the listener function", function (done) {
         var tests = 0;
-        flexo.listen(source, "@test-listen", function () {
+        flexo.listen(source, "!test-listen", function () {
           ++tests;
         });
-        flexo.notify(source, "@test-listen");
-        flexo.notify(source, "@test-listen");
-        assert.strictEqual(tests, 2);
+        flexo.notify(source, "!test-listen");
+        flexo.notify(source, "!test-listen");
+        flexo.asap(function () {
+          assert.strictEqual(tests, 2);
+          done();
+        });
       });
-      it("accepts an object as the listener parameter, whose `handleEvent` method is invoked on notifications", function () {
+      it("accepts an object as the listener parameter, whose `handleEvent` method is invoked on notifications", function (done) {
         var listener = {
           tests: 0,
           handleEvent: function () {
             ++this.tests;
           }
         };
-        flexo.listen(source, "@test-handleEvent", listener);
-        flexo.notify(source, "@test-handleEvent");
-        flexo.notify(source, "@test-handleEvent");
-        assert.strictEqual(listener.tests, 2);
+        flexo.listen(source, "!test-handleEvent", listener);
+        flexo.notify(source, "!test-handleEvent");
+        flexo.notify(source, "!test-handleEvent");
+        flexo.asap(function () {
+          assert.strictEqual(listener.tests, 2);
+          done();
+        });
       });
     });
 
     describe("flexo.listen_once(target, type, listener)", function () {
-      it("listens to events of `type` from `target` and executes the listener, then immediately stops listening", function () {
+      it("listens to events of `type` from `target` and executes the listener, then immediately stops listening", function (done) {
         var tests = 0;
-        flexo.listen_once(source, "@test-once", function () {
+        flexo.listen_once(source, "!test-once", function () {
           ++tests;
         });
-        flexo.notify(source, "@test-once");
-        flexo.notify(source, "@test-once");
-        assert.strictEqual(tests, 1);
+        flexo.notify(source, "!test-once");
+        flexo.notify(source, "!test-once");
+        flexo.asap(function () {
+          assert.strictEqual(tests, 1);
+          done();
+        });
       });
     });
 
@@ -625,7 +634,7 @@
         flexo.listen(source, "!test-notify", flexo.discard(done));
         flexo.notify(source, "!test-notify");
       });
-      it("sends additional arguments through the `arguments` object", function () {
+      it("sends additional arguments through the `arguments` object", function (done) {
         flexo.listen(source, "!test-args", function (e) {
           assert.strictEqual(e.source, source);
           assert.strictEqual(e.type, "!test-args");
@@ -633,46 +642,86 @@
           assert.strictEqual(e.bar, 2);
         });
         flexo.notify(source, "!test-args", { foo: 1, bar: 2 });
+        flexo.asap(flexo.discard(done));
       });
     });
 
     describe("flexo.notify(e)", function () {
-      it("sends an event notification of `e.type` on behalf of `e.source` with additional arguments from `e`", function () {
-        flexo.listen(source, "@test-e", function (e) {
+      it("sends an event notification of `e.type` on behalf of `e.source` with additional arguments from `e`", function (done) {
+        flexo.listen(source, "!test-e", function (e) {
           assert.strictEqual(e.source, source);
-          assert.strictEqual(e.type, "@test-e");
+          assert.strictEqual(e.type, "!test-e");
           assert.strictEqual(e.foo, 1);
           assert.strictEqual(e.bar, 2);
         });
-        flexo.notify({ source: source, type: "@test-e", foo: 1, bar: 2 });
+        flexo.notify({ source: source, type: "!test-e", foo: 1, bar: 2 });
+        flexo.asap(flexo.discard(done));
       });
     });
 
+    function wait_for_notification(source, event) {
+      var promise = new flexo.Promise;
+      flexo.listen_once(source, event, function () {
+        promise.fulfill();
+      });
+      return promise;
+    }
+
     describe("flexo.unlisten(target, type, listener)", function () {
-      it("removes `listener` for events of `type` from `target`", function () {
+      it("removes `listener` for events of `type` from `target`", function (done) {
         var tests = 0;
         var h = function () {
           ++tests;
         };
-        flexo.listen(source, "@test-unlisten", h);
-        flexo.notify(source, "@test-unlisten");
-        flexo.unlisten(source, "@test-unlisten", h);
-        flexo.notify(source, "@test-unlisten");
+        flexo.listen(source, "!test-unlisten", h);
+        flexo.notify(source, "!test-unlisten");
+        wait_for_notification(source, "!test-unlisten").then(function () {
+          assert.strictEqual(tests, 1);
+          done();
+        });
+          /*
+        flexo.unlisten(source, "!test-unlisten", h);
+        flexo.notify(source, "!test-unlisten");
         assert.strictEqual(tests, 1);
-
-        flexo.listen(source, "@test-unlisten2", h);
-        flexo.listen(source, "@test-unlisten2", function () {
+        flexo.listen(source, "!test-unlisten2", h);
+        flexo.listen(source, "!test-unlisten2", function () {
           ++tests;
         });
-        flexo.notify(source, "@test-unlisten2");
-        flexo.unlisten(source, "@test-unlisten2", h);
-        flexo.notify(source, "@test-unlisten2");
+        flexo.notify(source, "!test-unlisten2");
+        flexo.unlisten(source, "!test-unlisten2", h);
+        flexo.notify(source, "!test-unlisten2");
         assert.strictEqual(tests, 4);
+        */
       });
     });
   });
 
   describe("Functions and Asynchronicity", function () {
+
+    describe("flexo.asap(f)", function () {
+      it("runs f as soon as possible, using setImmediate or window.postMessage where available", function (done) {
+        var count = 100;
+        var decr = function () {
+          if (count-- > 0) {
+            flexo.asap(decr);
+          } else {
+            done();
+          }
+        }
+        decr();
+      });
+      it("(compare with setTimeout which may generate a warning for taking too long)", function (done) {
+        var count = 100;
+        var decr = function () {
+          if (count-- > 0) {
+            setTimeout(decr, 0);
+          } else {
+            done();
+          }
+        }
+        decr();
+      });
+    });
 
     describe("flexo.discard(f, [n=0])", function () {
       it("returns a function that discards its arguments", function (done) {
