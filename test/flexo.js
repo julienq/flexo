@@ -771,6 +771,38 @@
       });
     });
 
+    describe("Promises", function () {
+      it("follow the Promises/A+ spec; see separate test suite", flexo.nop);
+      var promise = new flexo.Promise;
+      it("create a new promise with: new flexo.Promise", function () {
+        assert.ok(promise instanceof flexo.Promise);
+        assert.ok(typeof promise.then == "function");
+      });
+      it("is fulfilled with promise.fulfill(value)", function (done) {
+        promise.fulfill(true).then(function (v) {
+          assert.strictEqual(v, true);
+          done();
+        }, done);
+      });
+      it("is rejected with promise.reject(reason)", function (done) {
+        new flexo.Promise().reject(false).then(done, function (r) {
+          assert.strictEqual(r, false);
+          done();
+        });
+      });
+      it("can be rejected automatically after a timeout with promise.timeout(ms)", function (done) {
+        new flexo.Promise().timeout(20).then(done, function (r) {
+          assert.strictEqual(r, "Timeout");
+          var p = new flexo.Promise().timeout(20);
+          p.then(function (v) {
+            assert.strictEqual(v, true);
+            done();
+          }, done);
+          p.fulfill(true);
+        });
+      });
+    });
+
     describe("Trampoline calls", function () {
       it("todo");
     });
