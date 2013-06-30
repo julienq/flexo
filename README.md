@@ -28,6 +28,7 @@ to get an idea of what you can do.
 
 ### New in v0.2.1 (in progress)
 
+* **intersperse** for arrays;
 * **remove** for urn;
 * **timeout** for promises;
 * **asap** as a faster way to delay execution than setTimeout, using

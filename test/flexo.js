@@ -315,6 +315,17 @@
       });
     });
 
+    describe("flexo.intersperse(array, sep)", function () {
+      it("intersperses the separator between the elements of the array", function () {
+        assert.deepEqual(flexo.intersperse([], "empty"), []);
+        assert.deepEqual(flexo.intersperse([0], "singleton"), [0]);
+        assert.deepEqual(flexo.intersperse([0, 1], "+"), [0, "+", 1]);
+        assert.deepEqual(flexo.intersperse([0, 1, 2], "+"), [0, "+", 1, "+", 2]);
+        assert.deepEqual(flexo.intersperse([0, 1, 2, 3, 4, 5, 6, 7,8], "+"),
+          [0, "+", 1, "+", 2, "+", 3, "+", 4, "+", 5, "+", 6, "+", 7, "+", 8]);
+      });
+    });
+
     describe("flexo.partition(array, p)", function () {
       it("partitions array in two arrays according to predicate p; first array is the one for which p(x) is true", function () {
         var partition = flexo.partition([0, 1, 2, 3, 4, 5, 6, 7, 8],

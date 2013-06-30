@@ -1,6 +1,6 @@
 {
   "name": "flexo",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A Javascript general-purpose library (used by Bender a.o.)",
   "main": "flexo.js",
   "scripts": {
@@ -12,6 +12,5 @@
   },
   "author": "Julien Quint",
   "license": "Apache License v2.0",
-  "readmeFilename": "README.md",
-  "gitHead": "34658de1c915ddcb938c0478d203dbf51f7e8ec4"
+  "readmeFilename": "README.md"
 }
