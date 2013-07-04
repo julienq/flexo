@@ -598,11 +598,11 @@
     describe("flexo.listen(target, type, listener)", function () {
       it("listens to events of `type` from `target` and executes the listener function", function (done) {
         var tests = 0;
-        flexo.listen(source, "!test-listen", function () {
+        flexo.listen(source, "test-listen", function () {
           ++tests;
         });
-        flexo.notify(source, "!test-listen");
-        flexo.notify(source, "!test-listen");
+        flexo.notify(source, "test-listen");
+        flexo.notify(source, "test-listen");
         flexo.asap(function () {
           assert.strictEqual(tests, 2);
           done();
@@ -615,11 +615,24 @@
             ++this.tests;
           }
         };
-        flexo.listen(source, "!test-handleEvent", listener);
-        flexo.notify(source, "!test-handleEvent");
-        flexo.notify(source, "!test-handleEvent");
+        flexo.listen(source, "test-handleEvent", listener);
+        flexo.notify(source, "test-handleEvent");
+        flexo.notify(source, "test-handleEvent");
         flexo.asap(function () {
           assert.strictEqual(listener.tests, 2);
+          done();
+        });
+      });
+      it("delays the handling of the notification so that a listener can be added after the notification (if control was not yielded in the meantime)", function (done) {
+        var handled = false;
+        flexo.notify(source, "test-listen-after-notify");
+        flexo.notify(source, "test-listen-after-notify");
+        flexo.listen_once(source, "test-listen-after-notify", function () {
+          assert(!handled);
+          handled = true;
+        });
+        flexo.asap(function () {
+          assert.strictEqual(handled, true);
           done();
         });
       });
@@ -628,11 +641,11 @@
     describe("flexo.listen_once(target, type, listener)", function () {
       it("listens to events of `type` from `target` and executes the listener, then immediately stops listening", function (done) {
         var tests = 0;
-        flexo.listen_once(source, "!test-once", function () {
+        flexo.listen_once(source, "test-once", function () {
           ++tests;
         });
-        flexo.notify(source, "!test-once");
-        flexo.notify(source, "!test-once");
+        flexo.notify(source, "test-once");
+        flexo.notify(source, "test-once");
         flexo.asap(function () {
           assert.strictEqual(tests, 1);
           done();
@@ -642,30 +655,30 @@
 
     describe("flexo.notify(source, type, arguments={})", function () {
       it("sends an event notification of `type` on behalf of `source`", function (done) {
-        flexo.listen(source, "!test-notify", flexo.discard(done));
-        flexo.notify(source, "!test-notify");
+        flexo.listen(source, "test-notify", flexo.discard(done));
+        flexo.notify(source, "test-notify");
       });
       it("sends additional arguments through the `arguments` object", function (done) {
-        flexo.listen(source, "!test-args", function (e) {
+        flexo.listen(source, "test-args", function (e) {
           assert.strictEqual(e.source, source);
-          assert.strictEqual(e.type, "!test-args");
+          assert.strictEqual(e.type, "test-args");
           assert.strictEqual(e.foo, 1);
           assert.strictEqual(e.bar, 2);
         });
-        flexo.notify(source, "!test-args", { foo: 1, bar: 2 });
+        flexo.notify(source, "test-args", { foo: 1, bar: 2 });
         flexo.asap(flexo.discard(done));
       });
     });
 
     describe("flexo.notify(e)", function () {
       it("sends an event notification of `e.type` on behalf of `e.source` with additional arguments from `e`", function (done) {
-        flexo.listen(source, "!test-e", function (e) {
+        flexo.listen(source, "test-e", function (e) {
           assert.strictEqual(e.source, source);
-          assert.strictEqual(e.type, "!test-e");
+          assert.strictEqual(e.type, "test-e");
           assert.strictEqual(e.foo, 1);
           assert.strictEqual(e.bar, 2);
         });
-        flexo.notify({ source: source, type: "!test-e", foo: 1, bar: 2 });
+        flexo.notify({ source: source, type: "test-e", foo: 1, bar: 2 });
         flexo.asap(flexo.discard(done));
       });
     });
@@ -684,9 +697,9 @@
         var h = function () {
           ++tests;
         };
-        flexo.listen(source, "!test-unlisten", h);
-        flexo.notify(source, "!test-unlisten");
-        wait_for_notification(source, "!test-unlisten").then(function () {
+        flexo.listen(source, "test-unlisten", h);
+        flexo.notify(source, "test-unlisten");
+        wait_for_notification(source, "test-unlisten").then(function () {
           assert.strictEqual(tests, 1);
           done();
         });
@@ -812,6 +825,7 @@
           p.fulfill(true);
         });
       });
+      it("a list of promises can be executed in sequence with promise.each");
     });
 
     describe("Trampoline calls", function () {

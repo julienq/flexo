@@ -14,6 +14,15 @@
       <div></div>
       <div></div>
     </div>
+    <p>This <a href="http://romulusetrem.us/flexo/">Flexo</a> sample shows how
+    to load and display images in parallel or in sequence using promises.</p>
+    <p id="seq">Here, the images are displayed in sequence, so that the top
+    image is always displayed first, even if the lower images have finished
+    loading before it. Compare with <a href="?seq=false">displaying the images
+      in parallel</a>.</p>
+    <p id="par">Here, the images are displayed in parallel, so that an image is
+    displayed as soon as it is loaded, regardless of load order. Compare with
+    <a href="?seq=true">displaying the images in sequence</a>.</p>
     <script src="../flexo.js"></script>
     <script>
 "use strict";
@@ -25,10 +34,12 @@ var URL = "https://dl.dropboxusercontent.com/u/7465599/romulusetrem.us/media/ima
 
 // Add ?seq=false to the URL to get parallel rather than sequential behavior
 var args = flexo.get_args({ n: 46, seq: true });
+flexo.safe_remove(document.getElementById(args.seq ? "par" : "seq"));
 var urn = new flexo.Urn;
 for (var i = 0; i < args.n; ++i) {
   urn.add(i + 1);
 }
+
 
 // Show an image after it was loaded succesfully
 function show_image(promise) {

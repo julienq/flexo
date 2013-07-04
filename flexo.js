@@ -587,6 +587,13 @@ if (typeof Function.prototype.bind !== "function") {
 
   // Custom events
 
+  // Listeners for events indexed by type of event. For every type, there is an
+  // array of 3-element arrays [target, listener, once]
+  // TODO universal hashing for JS values so that target can be used as a key
+  var events = {};
+
+  // Call an event listener, which may be a function or an object with a
+  // `handleEvent` function
   function call_listener(listener, e) {
     if (typeof listener.handleEvent == "function") {
       listener.handleEvent.call(listener, e);
@@ -595,23 +602,34 @@ if (typeof Function.prototype.bind !== "function") {
     }
   }
 
+  // Remove the triple `l` from events of type `type` (after listen_once, or
+  // unlisten)
+  function remove_listener(type, l) {
+    var i = events[type].indexOf(l);
+    if (i >= 0) {
+      events[type].splice(i, 1);
+      if (events[type].length == 0) {
+        delete events[type];
+      }
+    }
+  }
+
   // Listen to a custom event. Listener is a function or an object whose
   // "handleEvent" function will then be invoked. The listener is returned.
-  flexo.listen = function (target, type, listener) {
-    if (!(target.hasOwnProperty(type))) {
-      target[type] = [];
+  // TODO if target is null or undefined, listen to any source?
+  flexo.listen = function (target, type, listener, once) {
+    var l = [target, listener, !!once];
+    if (!(events.hasOwnProperty(type))) {
+      events[type] = [l];
+    } else {
+      events[type].push(l);
     }
-    target[type].push(listener);
     return listener;
   };
 
   // Listen to an event only once. The listener is returned.
   flexo.listen_once = function (target, type, listener) {
-    var h = function (e) {
-      flexo.unlisten(target, type, h);
-      call_listener(listener, e);
-    };
-    return flexo.listen(target, type, h);
+    return flexo.listen(target, type, listener, true);
   };
 
   // Can be called as notify(e), notify(source, type) or notify(source, type, e)
@@ -624,19 +642,31 @@ if (typeof Function.prototype.bind !== "function") {
     } else {
       e = source;
     }
-    if (e.type in e.source) {
-      flexo.asap(function () {
-        e.source[e.type].slice().forEach(function (listener) {
-          call_listener(listener, e);
+    return flexo.asap(function () {
+      if (events.hasOwnProperty(e.type)) {
+        events[e.type].filter(function (l) {
+          return l[0] === e.source;
+        }).forEach(function (l) {
+          if (l[2]) {
+            remove_listener(type, l);
+          }
+          call_listener(l[1], e);
         });
-      });
-    }
+      }
+    });
   };
 
   // Stop listening and return the removed listener. If the listener was not set
   // in the first place, do and return nothing.
   flexo.unlisten = function (target, type, listener) {
-    return flexo.remove_from_array(target[type], listener);
+    if (events.hasOwnProperty(type)) {
+      events[type].filter(function (l) {
+        return l[0] === target && l[1] === listener;
+      }).forEach(function (l) {
+        remove_listener(type, l);
+      });
+    }
+    return listener;
   };
 
 
@@ -743,10 +773,13 @@ if (typeof Function.prototype.bind !== "function") {
     timeout: function (dur_ms) {
       if (this._timeout) {
         clearTimeout(this._timeout);
+        delete this._timeout;
       }
-      this._timeout = setTimeout(function () {
-        this.reject("Timeout");
-      }.bind(this), dur_ms);
+      if (typeof dur_ms == "number" && dur_ms > 0) {
+        this._timeout = setTimeout(function () {
+          this.reject("Timeout");
+        }.bind(this), dur_ms);
+      }
       return this;
     },
 

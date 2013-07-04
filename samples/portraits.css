@@ -3,6 +3,12 @@ body {
   position: relative;
   width: 320px;
   background-color: #333;
+  color: #f8f9f0;
+}
+
+a {
+  text-decoration: none;
+  color: #ff4040;
 }
 
 @media screen and (max-device-width: 480px) {
