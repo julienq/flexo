@@ -28,6 +28,8 @@ to get an idea of what you can do.
 
 ### New in v0.2.1 (in progress)
 
+* reviewed custom events so that they are not stored on objects themselves,
+  including being able to listen to all notifications of a given type;
 * **intersperse** for arrays;
 * **remove** for urn;
 * **timeout** for promises;

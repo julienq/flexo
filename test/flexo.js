@@ -636,6 +636,26 @@
           done();
         });
       });
+      it("can listen to null for notifications from all sources", function (done) {
+        var x = {};
+        var y = {};
+        var z = {};
+        var heard = [];
+        var heard_from = function (e) {
+          heard.push(e.source);
+        };
+        flexo.listen(x, "test-listen-all", heard_from);
+        flexo.listen(null, "test-listen-all", heard_from);
+        flexo.notify(x, "test-listen-all");
+        flexo.notify(y, "test-listen-all");
+        flexo.notify(z, "test-listen-all");
+        flexo.asap(function () {
+          assert.ok(heard.indexOf(x) >= 0);
+          assert.ok(heard.indexOf(y) >= 0);
+          assert.ok(heard.indexOf(z) >= 0);
+          done();
+        });
+      });
     });
 
     describe("flexo.listen_once(target, type, listener)", function () {
