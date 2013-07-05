@@ -683,14 +683,6 @@
       });
     });
 
-    function wait_for_notification(source, event) {
-      var promise = new flexo.Promise;
-      flexo.listen_once(source, event, function () {
-        promise.fulfill();
-      });
-      return promise;
-    }
-
     describe("flexo.unlisten(target, type, listener)", function () {
       it("removes `listener` for events of `type` from `target`", function (done) {
         var tests = 0;
@@ -699,23 +691,12 @@
         };
         flexo.listen(source, "test-unlisten", h);
         flexo.notify(source, "test-unlisten");
-        wait_for_notification(source, "test-unlisten").then(function () {
-          assert.strictEqual(tests, 1);
+        var h_ = flexo.unlisten(source, "test-unlisten", h);
+        assert.strictEqual(h, h_);
+        flexo.asap(function () {
+          assert.strictEqual(tests, 0);
           done();
         });
-          /*
-        flexo.unlisten(source, "!test-unlisten", h);
-        flexo.notify(source, "!test-unlisten");
-        assert.strictEqual(tests, 1);
-        flexo.listen(source, "!test-unlisten2", h);
-        flexo.listen(source, "!test-unlisten2", function () {
-          ++tests;
-        });
-        flexo.notify(source, "!test-unlisten2");
-        flexo.unlisten(source, "!test-unlisten2", h);
-        flexo.notify(source, "!test-unlisten2");
-        assert.strictEqual(tests, 4);
-        */
       });
     });
   });
