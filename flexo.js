@@ -74,16 +74,16 @@ if (typeof Function.prototype.bind !== "function") {
   };
 
   // Define a property named `name` on object `obj` with the custom setter `set`
-  // The setter gets three parameters (<new value>, <current value>, <cancel>)
-  // and returns the new value to be set. An initial value may be provided,
-  // which does not trigger the setter. `fail` may be called with a truthy value
-  // to cancel the setter.
+  // The setter gets two parameters (<value>, <cancel>) and returns the new
+  // value to be set. An initial value may be provided, which does not trigger
+  // the setter. `cancel` may be called with a truthy value to cancel the
+  // setter.
   flexo.make_property = function (obj, name, set, value) {
     Object.defineProperty(obj, name, { enumerable: true,
       get: function () { return value; },
       set: function (v) {
         try {
-          value = set.call(this, v, value, flexo.fail);
+          value = set.call(this, v, flexo.fail);
         } catch (e) {
           if (e !== "fail") {
             throw e;
@@ -775,7 +775,7 @@ if (typeof Function.prototype.bind !== "function") {
   // single parameter evaluating to a truthy value, throw a "fail" exception;
   // otherwise, return false.
   flexo.fail = function (p) {
-    if (arguments.length === 0 || !!p) {
+    if (!arguments.length || p) {
       throw "fail";
     }
     return false;

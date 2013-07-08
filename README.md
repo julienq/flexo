@@ -29,6 +29,7 @@ to get an idea of what you can do.
 
 ### New in v0.2.1 (in progress)
 
+* Simplified **make_property** setter API (no need for previous value);
 * **Urn.picks** to pick n items at once;
 * reviewed custom events so that they are not stored on objects themselves;
   this also allows to listen to all notifications of a given type;

@@ -51,7 +51,7 @@
     describe("flexo.make_readonly(obj, name, get)", function () {
       var x = {};
       it("defines a property named name on object obj with the custom getter get", function () {
-        flexo.make_readonly(x, "foo", function () { return "bar"; });
+        flexo.make_readonly(x, "foo", flexo.funcify("bar"));
         assert.ok(x.hasOwnProperty("foo"), "x has property \"foo\"");
       });
       it("if get is a function, then it is the getter for the property", function () {
@@ -66,17 +66,17 @@
     describe("flexo.make_property(obj, name, set)", function () {
       var x = {};
       it("defines a property named name on object obj with the custom setter set", function () {
-        flexo.make_property(x, "foo", function (v, current) {
-          flexo.fail(v === current);
+        flexo.make_property(x, "foo", function (v, cancel) {
+          cancel(v == this.foo);
           return v + "!";
         });
         assert.ok(x.hasOwnProperty("foo"), "x has property \"foo\"");
       });
-      it("the setter gets two parameters (<new value>, <current value>) and returns the new value to be set", function () {
+      it("the setter gets two parameters (<value>, <cancel>) and returns the new value to be set", function () {
         x.foo = "bar";
         assert.strictEqual(x.foo, "bar!", "x.foo = \"bar!\"");
       });
-      it("the setter may call flexo.fail() with no value or a true-y value, so that the value is not updated", function () {
+      it("the setter may call cancel with no value or a truthy value to cancel setting the value", function () {
         x.foo = "bar!";
         assert.strictEqual(x.foo, "bar!", "x.foo was not updated");
       });
