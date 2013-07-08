@@ -21,6 +21,7 @@ to get an idea of what you can do.
 
 * Write documentation
 * Missing tests (fix unlisten)
+* Urn: make non-repeatable a parameter of pick, not Urn
 * Randomness: noise, drunk, seeded generator, &c.
 
 
@@ -28,8 +29,9 @@ to get an idea of what you can do.
 
 ### New in v0.2.1 (in progress)
 
-* reviewed custom events so that they are not stored on objects themselves,
-  including being able to listen to all notifications of a given type;
+* **Urn.picks** to pick n items at once;
+* reviewed custom events so that they are not stored on objects themselves;
+  this also allows to listen to all notifications of a given type;
 * **intersperse** for arrays;
 * **remove** for urn;
 * **timeout** for promises;

@@ -398,6 +398,14 @@
         var p = u.pick();
         assert.ok(a.indexOf(p) >= 0);
       });
+      it("picks n elements with urn.pick(n[, unique]), emptying the urn first if the unique flag is set and there are less than n items remaining in the urn", function () {
+        u.empty();
+        assert.strictEqual(u.remaining, 0);
+        u.pick();
+        assert.strictEqual(u.remaining, a.length - 1);
+        var picked = u.picks(a.length, true);
+        assert.deepEqual(picked.sort(), a);
+      });
       it("if the non_repeatable flag is set, then the next value after refilling the urn will not be different from the last pick (provided that the urn has at least two items to pick from", function () {
         var v = new flexo.Urn(a, true);
         var picked = [];
@@ -409,7 +417,7 @@
         for (var i = 0; i < 100; ++i) {
           var p = v.pick();
           assert.ok(p !== v);
-          v.remaining.push(p);
+          v._remaining.push(p);
         }
       });
     });
