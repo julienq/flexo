@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var assert = typeof require === "function" && require("chai").assert ||
+  var assert = typeof require == "function" && require("chai").assert ||
     window.chai.assert;
-  var flexo = typeof require === "function" && require("../flexo.js") ||
+  var flexo = typeof require == "function" && require("../flexo.js") ||
     window.flexo;
 
   describe("Flexo", function () {
@@ -383,41 +383,38 @@
       it("replaces the first instance of old_item in the array with new_item, and return old_item if it was present");
     });
 
-    describe("new flexo.Urn(array, [non_repeatable])", function () {
-      var a = [1, 2, 3, 4, 5];
-      var u = new flexo.Urn(a);
-      it("creates a new urn from a given array", function () {
-        assert.deepEqual(u.array, a);
+    describe("new flexo.Urn(items)", function () {
+      var items = [1, 2, 3, 4, 5];
+      var urn = new flexo.Urn(items);
+      it("creates a new urn from a given array of items", function () {
+        assert.deepEqual(urn.items, items);
       });
       it("picks an element with urn.pick(), refilling the urn with the original array once it becomes empty", function () {
         var picked = [];
-        for (var i = 0; i < a.length; ++i) {
-          picked.push(u.pick());
+        for (var i = 0; i < items.length; ++i) {
+          picked.push(urn.pick());
         }
-        assert.deepEqual(picked.sort(), a);
-        var p = u.pick();
-        assert.ok(a.indexOf(p) >= 0);
+        assert.deepEqual(picked.sort(), items);
+        var pick = urn.pick();
+        assert.ok(items.indexOf(pick) >= 0);
       });
-      it("picks n elements with urn.pick(n[, unique]), emptying the urn first if the unique flag is set and there are less than n items remaining in the urn", function () {
-        u.empty();
-        assert.strictEqual(u.remaining, 0);
-        u.pick();
-        assert.strictEqual(u.remaining, a.length - 1);
-        var picked = u.picks(a.length, true);
-        assert.deepEqual(picked.sort(), a);
+      it("picks n elements with urn.picks(n)", function () {
+        urn.empty();
+        assert.strictEqual(urn.remaining, 0);
+        urn.pick();
+        assert.strictEqual(urn.remaining, items.length - 1);
+        var picked = urn.picks(items.length);
+        assert.deepEqual(picked.sort(), items);
       });
-      it("if the non_repeatable flag is set, then the next value after refilling the urn will not be different from the last pick (provided that the urn has at least two items to pick from", function () {
-        var v = new flexo.Urn(a, true);
-        var picked = [];
-        for (var i = 0; i < a.length; ++i) {
-          picked.push(v.pick());
-        }
-        assert.deepEqual(picked.sort(), a);
-        var last = picked[picked.lenght - 1];
+      it("the next value after refilling the urn will be different from the last pick (provided that the urn has at least two items to pick from)", function () {
+        var picked = urn.picks(items.length);
+        assert.deepEqual(picked.sort(), items);
+        var last = picked[picked.length - 1];
         for (var i = 0; i < 100; ++i) {
-          var p = v.pick();
-          assert.ok(p !== v);
-          v._remaining.push(p);
+          var p = urn.pick();
+          assert.ok(p != last);
+          last = p;
+          urn._remaining.push(p);
         }
       });
     });

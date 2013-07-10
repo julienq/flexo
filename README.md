@@ -21,16 +21,16 @@ to get an idea of what you can do.
 
 * Write documentation
 * Missing tests (fix unlisten)
-* Urn: make non-repeatable a parameter of pick, not Urn
 * Randomness: noise, drunk, seeded generator, &c.
 
 
 ## Changes
 
-### New in v0.2.1 (in progress)
+### New in v0.2.1
 
 * Simplified **make_property** setter API (no need for previous value);
-* **Urn.picks** to pick n items at once;
+* **Urn.picks** to pick n items at once; **remaining** property; avoid repeats
+  by default (so no extra flag/parameter);
 * reviewed custom events so that they are not stored on objects themselves;
   this also allows to listen to all notifications of a given type;
 * **intersperse** for arrays;
@@ -102,3 +102,4 @@ to get an idea of what you can do.
 Trampoline calls are adapted from 
 [http://github.com/spencertipping/js-in-ten-minutes](http://github.com/spencertipping/js-in-ten-minutes).
 Asap is inspired by [https://github.com/NobleJS/setImmediate](https://github.com/NobleJS/setImmediate).
+Promises follow the [Promises/A+ spec](http://promises-aplus.github.io/promises-spec/).
