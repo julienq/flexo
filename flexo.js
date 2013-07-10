@@ -25,7 +25,7 @@ if (typeof Function.prototype.bind != "function") {
 (function (flexo) {
   "use strict";
 
-  flexo.VERSION = "0.2.1";
+  flexo.VERSION = "0.2.2";
 
   var foreach = Array.prototype.forEach;
   var map = Array.prototype.map;

@@ -26,13 +26,16 @@ to get an idea of what you can do.
 
 ## Changes
 
-### New in v0.2.1
+### New in v0.2.2
 
 * Simplified **make_property** setter API (no need for previous value);
 * **Urn.picks** to pick n items at once; **remaining** property; avoid repeats
   by default (so no extra flag/parameter);
 * reviewed custom events so that they are not stored on objects themselves;
-  this also allows to listen to all notifications of a given type;
+  this also allows to listen to all notifications of a given type.
+
+### New in v0.2.1
+
 * **intersperse** for arrays;
 * **remove** for urn;
 * **timeout** for promises;
