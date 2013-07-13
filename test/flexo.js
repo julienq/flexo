@@ -399,22 +399,16 @@
         assert.ok(items.indexOf(pick) >= 0);
       });
       it("picks n elements with urn.picks(n)", function () {
-        urn.empty();
-        assert.strictEqual(urn.remaining, 0);
-        urn.pick();
-        assert.strictEqual(urn.remaining, items.length - 1);
         var picked = urn.picks(items.length);
         assert.deepEqual(picked.sort(), items);
       });
       it("the next value after refilling the urn will be different from the last pick (provided that the urn has at least two items to pick from)", function () {
-        var picked = urn.picks(items.length);
-        assert.deepEqual(picked.sort(), items);
-        var last = picked[picked.length - 1];
+        var last = urn._last_pick;
         for (var i = 0; i < 100; ++i) {
-          var p = urn.pick();
-          assert.ok(p != last);
-          last = p;
-          urn._remaining.push(p);
+          var picks = urn.picks(urn.items.length);
+          assert.ok(picks[0] != last,
+            "picked %0 twice in a row? (%1)".fmt(picks[picks.length - 1], i));
+          last = picks[picks.length - 1];
         }
       });
     });
@@ -463,6 +457,14 @@
         test_uris.forEach(function (uri) {
           assert.deepEqual(uri.parsed, flexo.split_uri(uri.unparsed));
         });
+      });
+      it("returns an object with properties scheme, authority, path, query and fragment", function () {
+        var uri = flexo.split_uri(flexo.random_element(test_uris).unparsed);
+        assert.ok(uri.hasOwnProperty("scheme"));
+        assert.ok(uri.hasOwnProperty("authority"));
+        assert.ok(uri.hasOwnProperty("path"));
+        assert.ok(uri.hasOwnProperty("query"));
+        assert.ok(uri.hasOwnProperty("fragment"));
       });
       it("will split any string that looks like a URI, but return undefined otherwise", function () {
         assert.ok(typeof flexo.split_uri("this does not look like an URI?!") ==

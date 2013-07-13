@@ -25,7 +25,7 @@ if (typeof Function.prototype.bind != "function") {
 (function (flexo) {
   "use strict";
 
-  flexo.VERSION = "0.2.2";
+  flexo.VERSION = "0.2.3";
 
   var foreach = Array.prototype.forEach;
   var map = Array.prototype.map;
@@ -348,30 +348,34 @@ if (typeof Function.prototype.bind != "function") {
   // urn; items can be added or removed later.
   flexo.Urn = function (items) {
     flexo.make_property(this, "items", function (items_) {
-      this.empty();
+      this._remaining = [];
+      delete this._last_pick;
       return items_;
-    }, items || []);
+    });
     flexo.make_readonly(this, "remaining", function () {
       return this._remaining.length;
     });
-    this.empty();
+    this.items = Array.isArray(items) && items || [];
   };
 
   flexo.Urn.prototype = {
 
     // Pick an item from the urn, refilling it as necessary.
     pick: function () {
+      var last;
       if (this._remaining.length == 0) {
         this._remaining = slice.call(this.items);
+        if (this._remaining.length > 1 && this.hasOwnProperty("_last_pick")) {
+          last = flexo.remove_from_array(this._remaining, this._last_pick);
+        }
       }
       if (this._remaining.length > 0) {
-        var i = flexo.random_int(this._remaining.length - 1);
-        if (this.items.length > 1) {
-          while (this._remaining[i] === this._last_pick) {
-            i = flexo.random_int(this._remaining.length - 1);
-          }
+        this._last_pick = this._remaining
+          .splice(flexo.random_int(this._remaining.length - 1), 1)[0];
+        if (last !== undefined) {
+          this._remaining.push(last);
         }
-        return this._last_pick = this._remaining.splice(i, 1)[0];
+        return this._last_pick;
       }
     },
 
@@ -386,14 +390,6 @@ if (typeof Function.prototype.bind != "function") {
         picks.push(this.pick());
       }
       return picks;
-    },
-
-    // The urn can also be emptied at any moment, which resets is state
-    // completely.
-    empty: function () {
-      this._remaining = [];
-      delete this.last_pick;
-      return this;
     },
 
     // Add an item to the urn
@@ -433,27 +429,29 @@ if (typeof Function.prototype.bind != "function") {
       /^(?:([^:\/?#]+):)?(?:\/\/([^\/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
     );
     if (m) {
-      var u = {};
-      ["scheme", "authority", "path", "query", "fragment"]
-        .forEach(function (k, i) {
-          u[k] = m[i + 1];
-        });
-      return u;
+      return {
+        scheme: m[1],
+        authority: m[2],
+        path: m[3],
+        query: m[4],
+        fragment: m[5]
+      };
     }
   };
 
   // Rebuild an URI string from an object as split by flexo.split_uri
   flexo.unsplit_uri = function (r) {
-    return (r.scheme ? r.scheme + ":" : "") +
-      (r.authority ? "//" + r.authority : "") +
-      r.path +
-      (r.query ? "?" + r.query : "") +
-      (r.fragment ? "#" + r.fragment : "");
+    if (typeof r == "object") {
+      return (r.scheme ? r.scheme + ":" : "") +
+        (r.authority ? "//" + r.authority : "") +
+        r.path +
+        (r.query ? "?" + r.query : "") +
+        (r.fragment ? "#" + r.fragment : "");
+    }
   };
 
   // Utility function for absolute_uri
-  function remove_dot_segments(path) {
-    var input = path;
+  function remove_dot_segments(input) {
     var output = "";
     while (input) {
       var m = input.match(/^\.\.?\//);

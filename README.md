@@ -26,6 +26,11 @@ to get an idea of what you can do.
 
 ## Changes
 
+### New in v0.2.3 (in progress)
+
+* Check input parameters for **split_uri** and **absolute_uri**;
+* simplified **Urn** (removed **empty**).
+
 ### New in v0.2.2
 
 * Simplified **make_property** setter API (no need for previous value);
