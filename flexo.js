@@ -8,11 +8,11 @@ String.prototype.fmt = function () {
   var args = arguments;
   return this.replace(/%(\d+|%|\((\d+)\))/g, function (_, p, pp) {
     var p_ = parseInt(pp || p, 10);
-    return p === "%" ? "%" : args[p_] == null ? "" : args[p_];
+    return p == "%" ? "%" : args[p_] == null ? "" : args[p_];
   });
 };
 
-if (typeof Function.prototype.bind !== "function") {
+if (typeof Function.prototype.bind != "function") {
   Function.prototype.bind = function (x) {
     var f = this;
     var args = slice.call(arguments, 1);
@@ -25,7 +25,7 @@ if (typeof Function.prototype.bind !== "function") {
 (function (flexo) {
   "use strict";
 
-  flexo.VERSION = "0.2.1";
+  flexo.VERSION = "0.2.2";
 
   var foreach = Array.prototype.forEach;
   var map = Array.prototype.map;
@@ -60,8 +60,8 @@ if (typeof Function.prototype.bind !== "function") {
   // Test whether x is an instance of y (i.e. y is the prototype of x, or the
   // prototype of its prototype, or...)
   flexo.instance_of = function (x, y) {
-    var proto = typeof x === "object" && Object.getPrototypeOf(x);
-    return !!proto && (proto === y || flexo.instance_of(proto, y));
+    var proto = typeof x == "object" && Object.getPrototypeOf(x);
+    return !!proto && (proto == y || flexo.instance_of(proto, y));
   };
 
   // Define a property named `name` on object `obj` and make it read-only (i.e.
@@ -74,16 +74,16 @@ if (typeof Function.prototype.bind !== "function") {
   };
 
   // Define a property named `name` on object `obj` with the custom setter `set`
-  // The setter gets three parameters (<new value>, <current value>, <cancel>)
-  // and returns the new value to be set. An initial value may be provided,
-  // which does not trigger the setter. `fail` may be called with a truthy value
-  // to cancel the setter.
+  // The setter gets two parameters (<value>, <cancel>) and returns the new
+  // value to be set. An initial value may be provided, which does not trigger
+  // the setter. `cancel` may be called with a truthy value to cancel the
+  // setter.
   flexo.make_property = function (obj, name, set, value) {
     Object.defineProperty(obj, name, { enumerable: true,
       get: function () { return value; },
       set: function (v) {
         try {
-          value = set.call(this, v, value, flexo.fail);
+          value = set.call(this, v, flexo.fail);
         } catch (e) {
           if (e !== "fail") {
             throw e;
@@ -344,56 +344,70 @@ if (typeof Function.prototype.bind !== "function") {
     return shuffled;
   };
 
-  // Create a new urn to pick from. The first argument is the array for the urn,
-  // then a flag to prevent successive repeating values when the urn is refilled
-  // (defaults to false.)
-  flexo.Urn = function (a, non_repeatable) {
-    flexo.make_property(this, "array", function (a_) {
+  // Create a new urn to pick from. The argument is the array of items in the
+  // urn; items can be added or removed later.
+  flexo.Urn = function (items) {
+    flexo.make_property(this, "items", function (items_) {
       this.empty();
-      return a_;
+      return items_;
+    }, items || []);
+    flexo.make_readonly(this, "remaining", function () {
+      return this._remaining.length;
     });
-    this.array = a || [];
-    this.non_repeatable = !!non_repeatable;
+    this.empty();
   };
 
   flexo.Urn.prototype = {
 
-    // Pick random elements from an array and remove them from the array. When
-    // the array is empty, recreate the initial array.
+    // Pick an item from the urn, refilling it as necessary.
     pick: function () {
-      if (this.remaining.length == 0) {
-        this.remaining = slice.call(this.array);
+      if (this._remaining.length == 0) {
+        this._remaining = slice.call(this.items);
       }
-      var i = flexo.random_int(this.remaining.length - 1);
-      if (this.non_repeatable && this.array.length > 1) {
-        while (this.remaining[i] === this.last_pick) {
-          i = flexo.random_int(this.remaining.length - 1);
+      if (this._remaining.length > 0) {
+        var i = flexo.random_int(this._remaining.length - 1);
+        if (this.items.length > 1) {
+          while (this._remaining[i] === this._last_pick) {
+            i = flexo.random_int(this._remaining.length - 1);
+          }
         }
+        return this._last_pick = this._remaining.splice(i, 1)[0];
       }
-      this.last_pick = this.remaining.splice(i, 1)[0];
-      return this.last_pick;
+    },
+
+    // Pick n elements from the urn and return as a list. Try to minimize
+    // repetition as much as possible
+    picks: function (n) {
+      if (n > this._remaining.length && n <= this.items.length) {
+        this._remaining = [];
+      }
+      var picks = [];
+      for (var i = 0; i < n; ++i) {
+        picks.push(this.pick());
+      }
+      return picks;
     },
 
     // The urn can also be emptied at any moment, which resets is state
     // completely.
     empty: function () {
-      this.remaining = [];
+      this._remaining = [];
       delete this.last_pick;
       return this;
     },
 
     // Add an item to the urn
     add: function (item) {
-      this.array.push(item);
-      this.remaining.push(item);
+      this.items.push(item);
+      this._remaining.push(item);
       return this;
     },
 
     // Remove an item from the urn
     remove: function (item) {
-      var removed = flexo.remove_from_array(this.array, item);
+      var removed = flexo.remove_from_array(this.items, item);
       if (removed) {
-        flexo.remove_from_array(this.remaining, item);
+        flexo.remove_from_array(this._remaining, item);
       }
       return removed;
     }
@@ -668,17 +682,15 @@ if (typeof Function.prototype.bind !== "function") {
 
   // Can be called as notify(e), notify(source, type) or notify(source, type, e)
   flexo.notify = function (source, type, e) {
-    if (e) {
+    if (typeof e == "object") {
       e.source = source;
       e.type = type;
-    } else if (type) {
+    } else if (typeof type == "string") {
       e = { source: source, type: type };
     } else {
       e = source;
     }
-    return flexo.asap(function () {
-      notify(e);
-    });
+    return flexo.asap(notify.bind(this, e));
   };
 
   function notify(e) {
@@ -772,7 +784,7 @@ if (typeof Function.prototype.bind !== "function") {
   // single parameter evaluating to a truthy value, throw a "fail" exception;
   // otherwise, return false.
   flexo.fail = function (p) {
-    if (arguments.length === 0 || !!p) {
+    if (!arguments.length || p) {
       throw "fail";
     }
     return false;

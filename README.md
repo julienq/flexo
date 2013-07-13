@@ -26,10 +26,16 @@ to get an idea of what you can do.
 
 ## Changes
 
-### New in v0.2.1 (in progress)
+### New in v0.2.2
 
-* reviewed custom events so that they are not stored on objects themselves,
-  including being able to listen to all notifications of a given type;
+* Simplified **make_property** setter API (no need for previous value);
+* **Urn.picks** to pick n items at once; **remaining** property; avoid repeats
+  by default (so no extra flag/parameter);
+* reviewed custom events so that they are not stored on objects themselves;
+  this also allows to listen to all notifications of a given type.
+
+### New in v0.2.1
+
 * **intersperse** for arrays;
 * **remove** for urn;
 * **timeout** for promises;
@@ -99,3 +105,4 @@ to get an idea of what you can do.
 Trampoline calls are adapted from 
 [http://github.com/spencertipping/js-in-ten-minutes](http://github.com/spencertipping/js-in-ten-minutes).
 Asap is inspired by [https://github.com/NobleJS/setImmediate](https://github.com/NobleJS/setImmediate).
+Promises follow the [Promises/A+ spec](http://promises-aplus.github.io/promises-spec/).

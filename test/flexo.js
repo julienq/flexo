@@ -51,7 +51,7 @@
     describe("flexo.make_readonly(obj, name, get)", function () {
       var x = {};
       it("defines a property named name on object obj with the custom getter get", function () {
-        flexo.make_readonly(x, "foo", function () { return "bar"; });
+        flexo.make_readonly(x, "foo", flexo.funcify("bar"));
         assert.ok(x.hasOwnProperty("foo"), "x has property \"foo\"");
       });
       it("if get is a function, then it is the getter for the property", function () {
@@ -66,17 +66,17 @@
     describe("flexo.make_property(obj, name, set)", function () {
       var x = {};
       it("defines a property named name on object obj with the custom setter set", function () {
-        flexo.make_property(x, "foo", function (v, current) {
-          flexo.fail(v === current);
+        flexo.make_property(x, "foo", function (v, cancel) {
+          cancel(v == this.foo);
           return v + "!";
         });
         assert.ok(x.hasOwnProperty("foo"), "x has property \"foo\"");
       });
-      it("the setter gets two parameters (<new value>, <current value>) and returns the new value to be set", function () {
+      it("the setter gets two parameters (<value>, <cancel>) and returns the new value to be set", function () {
         x.foo = "bar";
         assert.strictEqual(x.foo, "bar!", "x.foo = \"bar!\"");
       });
-      it("the setter may call flexo.fail() with no value or a true-y value, so that the value is not updated", function () {
+      it("the setter may call cancel with no value or a truthy value to cancel setting the value", function () {
         x.foo = "bar!";
         assert.strictEqual(x.foo, "bar!", "x.foo was not updated");
       });
@@ -383,33 +383,38 @@
       it("replaces the first instance of old_item in the array with new_item, and return old_item if it was present");
     });
 
-    describe("new flexo.Urn(array, [non_repeatable])", function () {
-      var a = [1, 2, 3, 4, 5];
-      var u = new flexo.Urn(a);
-      it("creates a new urn from a given array", function () {
-        assert.deepEqual(u.array, a);
+    describe("new flexo.Urn(items)", function () {
+      var items = [1, 2, 3, 4, 5];
+      var urn = new flexo.Urn(items);
+      it("creates a new urn from a given array of items", function () {
+        assert.deepEqual(urn.items, items);
       });
       it("picks an element with urn.pick(), refilling the urn with the original array once it becomes empty", function () {
         var picked = [];
-        for (var i = 0; i < a.length; ++i) {
-          picked.push(u.pick());
+        for (var i = 0; i < items.length; ++i) {
+          picked.push(urn.pick());
         }
-        assert.deepEqual(picked.sort(), a);
-        var p = u.pick();
-        assert.ok(a.indexOf(p) >= 0);
+        assert.deepEqual(picked.sort(), items);
+        var pick = urn.pick();
+        assert.ok(items.indexOf(pick) >= 0);
       });
-      it("if the non_repeatable flag is set, then the next value after refilling the urn will not be different from the last pick (provided that the urn has at least two items to pick from", function () {
-        var v = new flexo.Urn(a, true);
-        var picked = [];
-        for (var i = 0; i < a.length; ++i) {
-          picked.push(v.pick());
-        }
-        assert.deepEqual(picked.sort(), a);
-        var last = picked[picked.lenght - 1];
+      it("picks n elements with urn.picks(n)", function () {
+        urn.empty();
+        assert.strictEqual(urn.remaining, 0);
+        urn.pick();
+        assert.strictEqual(urn.remaining, items.length - 1);
+        var picked = urn.picks(items.length);
+        assert.deepEqual(picked.sort(), items);
+      });
+      it("the next value after refilling the urn will be different from the last pick (provided that the urn has at least two items to pick from)", function () {
+        var picked = urn.picks(items.length);
+        assert.deepEqual(picked.sort(), items);
+        var last = picked[picked.length - 1];
         for (var i = 0; i < 100; ++i) {
-          var p = v.pick();
-          assert.ok(p !== v);
-          v.remaining.push(p);
+          var p = urn.pick();
+          assert.ok(p != last);
+          last = p;
+          urn._remaining.push(p);
         }
       });
     });
