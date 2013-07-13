@@ -412,9 +412,12 @@ if (typeof Function.prototype.bind !== "function") {
 
   // Split an URI into an object with the five parts scheme, authority, path,
   // query, and fragment (without the extra punctuation; i.e. query does not
-  // have a leading "?") Fields not in the URI are undefined.
+  // have a leading "?") Fields not in the URI are undefined. Return nothing if
+  // the input URI does not match.
   flexo.split_uri = function (uri) {
-    var m = uri.match(/^(?:([^:\/?#]+):)?(?:\/\/([^\/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/);
+    var m = typeof uri == "string" && uri.match(
+      /^(?:([^:\/?#]+):)?(?:\/\/([^\/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
+    );
     if (m) {
       var u = {};
       ["scheme", "authority", "path", "query", "fragment"]
@@ -467,10 +470,16 @@ if (typeof Function.prototype.bind !== "function") {
   // Return an absolute URI for the reference URI for a given base URI
   flexo.absolute_uri = function (base, ref) {
     var r = flexo.split_uri(ref);
+    if (!r) {
+      return;
+    }
     if (r.scheme) {
       r.path = remove_dot_segments(r.path);
     } else {
       var b = flexo.split_uri(base);
+      if (!b) {
+        return;
+      }
       r.scheme = b.scheme;
       if (r.authority) {
         r.path = remove_dot_segments(r.path);
