@@ -29,7 +29,9 @@ to get an idea of what you can do.
 ### New in v0.2.3 (in progress)
 
 * Check input parameters for **split_uri** and **absolute_uri**;
-* simplified **Urn** (removed **empty**).
+* simplified **Urn** (removed **empty**);
+* **then** to wrap around values thay *may* be promises [needs tests];
+* **promise_script** for script loading [needs tests].
 
 ### New in v0.2.2
 
