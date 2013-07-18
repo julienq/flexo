@@ -1014,7 +1014,9 @@ if (typeof Function.prototype.bind != "function") {
     var promise = this._promise = new flexo.Promise;
     array = array.slice();
     var n = array.length;
-    var result = [];
+    if (typeof f == "function") {
+      var result = [];
+    }
     var g = function (i) {
       if (i == n) {
         promise.fulfill(result);
@@ -1022,13 +1024,17 @@ if (typeof Function.prototype.bind != "function") {
         var v = array[i];
         if (v && typeof v.then == "function") {
           v.then(function (value) {
-            result.push(f(value));
+            if (result) {
+              result.push(f(value));
+            }
             g(i + 1);
           }, function (reason) {
             promise.reject(reason);
           });
         } else {
-          result.push(f(v));
+          if (result) {
+            result.push(f(v));
+          }
           g(i + 1);
         }
       }
