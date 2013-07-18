@@ -31,7 +31,8 @@ to get an idea of what you can do.
 * Check input parameters for **split_uri** and **absolute_uri**;
 * simplified **Urn** (removed **empty**);
 * **then** to wrap around values thay *may* be promises [needs tests];
-* **promise_script** for script loading [needs tests].
+* **promise_script** for script loading [needs tests];
+* **Seq** is back, using promises (similar to Par; need to review the API.)
 
 ### New in v0.2.2
 

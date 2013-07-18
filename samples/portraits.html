@@ -9,20 +9,17 @@
     <div id="loading">
       LOADING
     </div>
-    <div id="head">
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
     <p>This <a href="http://romulusetrem.us/flexo/">Flexo</a> sample shows how
     to load and display images in parallel or in sequence using promises.</p>
-    <p id="seq">Here, the images are displayed in sequence, so that the top
-    image is always displayed first, even if the lower images have finished
+    <p id="seq">Here, the images are displayed in sequence, so that the first
+    image is always displayed first, even if the other images have finished
     loading before it. Compare with <a href="?seq=false">displaying the images
       in parallel</a>.</p>
     <p id="par">Here, the images are displayed in parallel, so that an image is
     displayed as soon as it is loaded, regardless of load order. Compare with
     <a href="?seq=true">displaying the images in sequence</a>.</p>
+    <ul id="gallery">
+    </ul>
     <script src="../flexo.js"></script>
     <script>
 "use strict";
@@ -33,36 +30,34 @@
 var URL = "https://dl.dropboxusercontent.com/u/7465599/romulusetrem.us/media/images/randomhead/portraits/%0.png";
 
 // Add ?seq=false to the URL to get parallel rather than sequential behavior
-var args = flexo.get_args({ n: 46, seq: true });
+var args = flexo.get_args({ n: 46, m: 10, seq: true });
 flexo.safe_remove(document.getElementById(args.seq ? "par" : "seq"));
 var urn = new flexo.Urn;
 for (var i = 0; i < args.n; ++i) {
   urn.add(i + 1);
 }
+var picks = urn.picks(args.m);
 
-
-// Show an image after it was loaded succesfully
-function show_image(promise) {
-  return promise.then(function (img) {
-    promise.div.appendChild(img);
-  });
+var li = [];
+var ul = document.getElementById("gallery");
+for (var i = 0; i < args.m; ++i) {
+  li.push(ul.appendChild(flexo.$li()));
 }
 
-// Make a promise to load images for all divs in the #head element
-var promises = Array.prototype.map.call(document.querySelectorAll("#head div"),
-  function (div) {
-    var promise = flexo.promise_img(URL.fmt(flexo.pad(urn.pick(), 2)));
-    promise.div = div;
-    return promise;
-  });
-
 (args.seq ?
-  // Sequential display: apply show_image to all promises in document order
-  new flexo.Promise().fulfill().each(promises, show_image) :
-  // Parallel display: apply show_image to promises as soon as they load
-  new flexo.Par(promises.map(show_image))
-).then(function () {
-  // Remove the loading message once all images have loaded
+  new flexo.Seq(picks.map(function (n, i) {
+    var p = flexo.promise_img(URL.fmt(flexo.pad(n, 2)));
+    p.img._li = li[i];
+    return p;
+  }), function (img) {
+    img._li.appendChild(img);
+  }) :
+  new flexo.Par(picks.map(function (n, i) {
+    flexo.promise_img(URL.fmt(flexo.pad(n, 2))).then(function (img) {
+      li[i].appendChild(img);
+    });
+  }))
+).then(function (images) {
   flexo.safe_remove(document.getElementById("loading"));
 });
 
