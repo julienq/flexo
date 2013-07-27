@@ -10,7 +10,9 @@
       LOADING
     </div>
     <p>This <a href="http://romulusetrem.us/flexo/">Flexo</a> sample shows how
-    to load and display images in parallel or in sequence using promises.</p>
+    to load and display images in parallel or in sequence using promises. The
+    is by <a href="http://jonathanlarabie.net/">Jonathan Larabie</a> and
+      <a href="http://romulusetrem.us/">romulusetrem.us</a>.</p>
     <p id="seq">Here, the images are displayed in sequence, so that the first
     image is always displayed first, even if the other images have finished
     loading before it. Compare with <a href="?seq=false">displaying the images
@@ -24,12 +26,8 @@
     <script>
 "use strict";
 
-// URL pattern for images (name 01.png, 02.png, ... 46.png)
-// Art by Jonathan Larabie (http://jonathanlarabie.net/) and
-// Romulus ou Remus (http://romulusetrem.us/)
 var URL = "https://dl.dropboxusercontent.com/u/7465599/romulusetrem.us/media/images/randomhead/portraits/%0.png";
 
-// Add ?seq=false to the URL to get parallel rather than sequential behavior
 var args = flexo.get_args({ n: 46, m: 10, seq: true });
 flexo.safe_remove(document.getElementById(args.seq ? "par" : "seq"));
 var urn = new flexo.Urn;
@@ -45,19 +43,22 @@ for (var i = 0; i < args.m; ++i) {
 }
 
 (args.seq ?
-  new flexo.Seq(picks.map(function (n, i) {
-    var p = flexo.promise_img(URL.fmt(flexo.pad(n, 2)));
-    p.img._li = li[i];
-    return p;
-  }), function (img) {
-    img._li.appendChild(img);
+  flexo.promise_fold(picks.map(function (n) {
+    return flexo.promise_img(URL.fmt(flexo.pad(n, 2)));
+  }), function (_, img, i) {
+    return img.then(function (img_) {
+      li[i].appendChild(img_);
+      console.log("Loaded image #%0".fmt(i));
+    });
   }) :
-  new flexo.Par(picks.map(function (n, i) {
-    flexo.promise_img(URL.fmt(flexo.pad(n, 2))).then(function (img) {
+  flexo.promise_each(picks.map(function (n, i) {
+    return flexo.promise_img(URL.fmt(flexo.pad(n, 2))).then(function (img) {
       li[i].appendChild(img);
+      console.log("Loaded image #%0".fmt(i));
     });
   }))
 ).then(function (images) {
+  console.log("All images loaded");
   flexo.safe_remove(document.getElementById("loading"));
 });
 

@@ -28,11 +28,12 @@ to get an idea of what you can do.
 
 ### New in v0.2.3 (in progress)
 
-* Check input parameters for **split_uri** and **absolute_uri**;
+* Improved error handling and added mimeType parameter for **ez_xhr**;
+* check input parameters for **split_uri** and **absolute_uri**;
 * simplified **Urn** (removed **empty**);
 * **then** to wrap around values thay *may* be promises [needs tests];
 * **promise_script** for script loading [needs tests];
-* **Seq** is back, using promises (similar to Par; need to review the API);
+* **promise_each**, **promise_map**, **promise_fold** [need tests];
 * made the second argument to **normalize_uri** optional.
 
 ### New in v0.2.2

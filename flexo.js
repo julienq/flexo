@@ -425,7 +425,7 @@ if (typeof Function.prototype.bind != "function") {
   // have a leading "?") Fields not in the URI are undefined. Return nothing if
   // the input URI does not match.
   flexo.split_uri = function (uri) {
-    var m = typeof uri == "string" && uri.match(
+    var m = flexo.safe_string(uri).match(
       /^(?:([^:\/?#]+):)?(?:\/\/([^\/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
     );
     if (m) {
@@ -521,7 +521,7 @@ if (typeof Function.prototype.bind != "function") {
   //   * escaped letters, digits, hyphen, period and underscore are unescaped
   //   * remove port 80 from authority
   flexo.normalize_uri = function (base, ref) {
-    var uri = flexo.split_uri(flexo.absolute_uri(base, ref || "")
+    var uri = flexo.split_uri(flexo.absolute_uri(base, ref)
       .replace(/%([0-9a-f][0-9a-f])/gi, function (m, n) {
         n = parseInt(n, 16);
         return (n >= 0x41 && n <= 0x5a) || (n >= 0x61 && n <= 0x7a) ||
@@ -538,6 +538,7 @@ if (typeof Function.prototype.bind != "function") {
   };
 
   // Make an XMLHttpRequest with optional params and return a promise
+  // Set a mimeType parameter to override the MIME type of the request
   flexo.ez_xhr = function (uri, params) {
     var req = new XMLHttpRequest;
     if (typeof uri == "object") {
@@ -550,6 +551,9 @@ if (typeof Function.prototype.bind != "function") {
     if (params.hasOwnProperty("responseType")) {
       req.responseType = params.responseType;
     }
+    if (params.hasOwnProperty("mimeType")) {
+      req.overrideMimeType(params.mimeType);
+    }
     if (params.hasOwnProperty("headers")) {
       for (var h in params.headers) {
         req.setRequestHeader(h, params.headers[h]);
@@ -560,12 +564,17 @@ if (typeof Function.prototype.bind != "function") {
       if (req.response != null) {
         promise.fulfill(req.response);
       } else {
-        promise.reject({ reason: "missing response", request: req });
+        promise.reject({ message: "missing response", request: req });
       }
     };
-    req.onerror = promise.reject.bind(promise, { reason: "XHR error",
-      request: req });
-    req.send(params.data || "");
+    req.onerror = function (error) {
+      promise.reject({ message: "XHR error", request: req, error: error });
+    };
+    try {
+      req.send(params.data || "");
+    } catch (e) {
+      promise.reject({ message: "XHR error", request: req, exception: e });
+    }
     return promise;
   };
 
@@ -972,78 +981,90 @@ if (typeof Function.prototype.bind != "function") {
     return promise;
   };
 
-  flexo.Par = function (array, tolerate_rejections) {
-    var promise = this._promise = new flexo.Promise;
+  // Apply function f (defaults to id) to all elements of array xs. Return a
+  // promise that gets fulfilled with the last value (or the provided z value)
+  // once all elements have finished.
+  flexo.promise_each = function (xs, f, that, z) {
+    var promise = new flexo.Promise;
+    if (typeof f != "function") {
+      f = flexo.id;
+    }
     var pending = 0;
-    var result = new Array(array.length);
-    flexo.make_readonly(this, "pending", function () {
-      return pending > 0;
-    });
-    var check_done = function (decr) {
-      pending -= decr;
-      if (pending == 0) {
-        promise.fulfill(result);
-      }
-    };
-    array.forEach(function (p, i) {
-      if (p && typeof p.then == "function") {
+    var last;
+    foreach.call(xs, function (x, i) {
+      var y = last = f.call(that, x, i, xs);
+      if (y && typeof y.then == "function") {
         ++pending;
-        p.then(function (value) {
-          result[i] = value;
-          check_done(1);
-        }, function (reason) {
-          if (!!tolerate_rejections) {
-            result[i] = reason;
-            check_done(1);
+        y.then(function (y_) {
+          if (i == xs.length - 1) {
+            last = y_;
+          }
+          if (--pending == 0) {
+            promise.fulfill(arguments.length > 3 ? z : last);
+          }
+        }, promise.reject.bind(promise));
+      }
+    });
+    if (pending == 0) {
+      promise.fulfill(arguments.length > 3 ? z : last);
+    }
+    return promise;
+  };
+
+  flexo.promise_map = function (xs, f, that, tolerant) {
+    if (arguments.length < 4 && typeof that == "boolean") {
+      tolerant = that;
+      that = undefined;
+    }
+    var promise = new flexo.Promise;
+    var ys = new Array(xs.length);
+    var pending = 1;
+    var check_pending = function (decr) {
+      if (--pending == 0) {
+        promise.fulfill(ys);
+      }
+    }
+    foreach.call(xs, function (x, i) {
+      var y = f.call(that, x, i, xs);
+      if (y && typeof y.then == "function") {
+        ++pending;
+        y.then(function (y_) {
+          ys[i] = y_;
+          check_pending();
+        }, function (y_) {
+          if (tolerant) {
+            ys[i] = y_;
+            check_pending();
           } else {
             promise.reject(reason);
           }
         });
       } else {
-        result[i] = p;
+        ys[i] = y;
       }
     });
-    check_done(0);
+    check_pending();
+    return promise;
   };
 
-  flexo.Par.prototype.then = function (on_fulfilled, on_rejected) {
-    return this._promise.then(on_fulfilled, on_rejected);
-  };
-
-  flexo.Seq = function (array, f) {
-    var promise = this._promise = new flexo.Promise;
-    array = array.slice();
-    var n = array.length;
-    if (typeof f == "function") {
-      var result = [];
-    }
-    var g = function (i) {
-      if (i == n) {
-        promise.fulfill(result);
+  flexo.promise_fold = function (xs, f, z) {
+    var promise = new flexo.Promise;
+    var g = function (z, i) {
+      if (i == xs.length) {
+        promise.fulfill(z);
       } else {
-        var v = array[i];
-        if (v && typeof v.then == "function") {
-          v.then(function (value) {
-            if (result) {
-              result.push(f(value));
-            }
-            g(i + 1);
-          }, function (reason) {
-            promise.reject(reason);
+        var y = f(z, xs[i], i, xs);
+        if (y && typeof y.then == "function") {
+          y.then(function (y_) {
+            g(y_, i + 1);
           });
         } else {
-          if (result) {
-            result.push(f(v));
-          }
-          g(i + 1);
+          g(y, i + 1);
         }
       }
     };
-    g(0);
-  };
-
-  flexo.Seq.prototype.then = function (on_fulfilled, on_rejected) {
-    return this._promise.then(on_fulfilled, on_rejected);
+    g(z, 0);
+    return promise;
   };
 
   // DOM
