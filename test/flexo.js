@@ -466,19 +466,6 @@
         assert.ok(uri.hasOwnProperty("query"));
         assert.ok(uri.hasOwnProperty("fragment"));
       });
-      it("will split any string that looks like a URI, but return undefined otherwise", function () {
-        assert.ok(typeof flexo.split_uri("this does not look like an URI?!") ==
-          "object");
-        assert.strictEqual(undefined, flexo.split_uri());
-        assert.strictEqual(undefined, flexo.split_uri(undefined));
-        assert.strictEqual(undefined, flexo.split_uri(null));
-        assert.strictEqual(undefined, flexo.split_uri(0));
-        assert.strictEqual(undefined, flexo.split_uri(true));
-        assert.strictEqual(undefined, flexo.split_uri(test_uris));
-        assert.strictEqual(undefined, flexo.split_uri(flexo.id));
-        assert.strictEqual(undefined, flexo.split_uri({}));
-        assert.strictEqual(undefined, flexo.split_uri(flexo.split_uri("foo:")));
-      });
     });
 
     describe("flexo.unsplit_uri(uri_object)", function () {
