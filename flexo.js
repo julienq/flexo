@@ -1,21 +1,56 @@
-(function (flexo) {
+(function () {
   "use strict";
 
   /* global exports, global, window, π */
+  var browserp = typeof window === "object";
+  var global_ = browserp ? window : typeof global === "object" ? global :
+    (function () { return this; }());
+  var flexo = typeof exports === "object" ? exports : global_.flexo = {};
 
   flexo.VERSION = "0.2.3";
 
   var foreach = Array.prototype.forEach;
   var map = Array.prototype.map;
-  var reduce = Array.prototype.reduce;
   var slice = Array.prototype.slice;
   var splice = Array.prototype.splice;
 
-  var browserp = typeof window === "object";
-  var global_ = browserp ? window : global;
-
   // Define π as a global
   global_.π = Math.PI;
+
+
+  // Pseudo-macros
+
+  // Pseudo-macro for prototype inheritance
+  flexo._class = function (constructor, Proto) {
+    var p = constructor.prototype = new Proto();
+    Object.defineProperty(p, "constructor", { value: constructor });
+    return p;
+  };
+
+  // Make an accessor for a property. The accessor can be called with no
+  // parameter to get the current value, or the default value if not set. It can
+  // be called with a parameter to set a new value (converted to a string if
+  // necessary) and return the object itself for chaining purposes.
+  // The default_value parameter may be a function, in which case it used to
+  // normalize the input value and generate the default value from an undefined
+  // value (e.g., cf. normalize_*.)
+  flexo._accessor = function (object, name, default_value) {
+    var property = "_" + name;
+    object.prototype[name] = typeof default_value === "function" ?
+      function (value) {
+        if (arguments.length > 0) {
+          this[property] = default_value(value);
+          return this;
+        }
+        return this.hasOwnProperty(property) ? this[property] : default_value();
+      } : function (value) {
+        if (arguments.length > 0) {
+          this[property] = value;
+          return this;
+        }
+        return this.hasOwnProperty(property) ? this[property] : default_value;
+      };
+  };
 
   // Simple format function for messages and templates. Use %0, %1... as slots
   // for parameters; %(n) can also be used to avoid possible ambiguities (e.g.
@@ -251,7 +286,7 @@
 
   // Drop elements of an array while the predicate is true
   flexo.drop_while = function (a, p, that) {
-    for (var i = 0, n = a.length; i < n && p.call(that, a[i], i, a); ++i);
+    for (var i = 0, n = a.length; i < n && p.call(that, a[i], i, a); ++i) {}
     return slice.call(a, i);
   };
 
@@ -260,7 +295,7 @@
     if (!Array.isArray(a)) {
       return;
     }
-    for (var i = 0, n = a.length; i < n && !p.call(that, a[i], i, a); ++i);
+    for (var i = 0, n = a.length; i < n && !p.call(that, a[i], i, a); ++i) {}
     return a[i];
   };
 
@@ -307,7 +342,7 @@
     if (!Array.isArray(a)) {
       return;
     }
-    for (var i = 0, n = a.length; i < n && !p.call(that, a[i], i, a); ++i);
+    for (var i = 0, n = a.length; i < n && !p.call(that, a[i], i, a); ++i) {}
     if (i < n) {
       return a.splice(i, 1)[0];
     }
@@ -739,10 +774,10 @@
   flexo.unlisten = function (target, type, listener) {
     if (events.hasOwnProperty(type)) {
       for (var i = 0, n = events[type].length;
-          i < n && events[type][i][0] !== target; ++i);
+          i < n && events[type][i][0] !== target; ++i) {}
       if (i < n) {
         for (var j = 1, m = events[type][i].length;
-            j < m && events[type][i][j][0] !== listener; ++j);
+            j < m && events[type][i][j][0] !== listener; ++j) {}
         if (j < m) {
           events[type][i].splice(j, 1);
           if (events[type][i].length === 1) {
@@ -776,6 +811,9 @@
         }
       }, false);
       return function (f) {
+        if (typeof f !== "function") {
+          throw "Not a function: %0".fmt(f);
+        }
         queue.push(f);
         global_.postMessage(key, "*");
       };
@@ -803,7 +841,9 @@
 
   // Turn a value into a 0-ary function returning that value
   flexo.funcify = function (x) {
-    return typeof x === "function" ? x : function () { return x; };
+    return typeof x === "function" ? x : function () {
+      return x;
+    };
   };
 
   // Identity function
@@ -845,10 +885,14 @@
   flexo.Promise = function () {
     this._queue = [];
     this._resolved = resolved_promise.bind(this);
+    Object.defineProperty(this, "resolved", { enumerable: true,
+      get: function () {
+        return this.hasOwnProperty("value") || this.hasOwnProperty("reason");
+      }
+    });
   };
 
   flexo.Promise.prototype = {
-
     then: function (on_fulfilled, on_rejected) {
       var p = new flexo.Promise();
       this._queue.push([p, on_fulfilled, on_rejected]);
@@ -877,16 +921,7 @@
 
     reject: function (reason) {
       return resolve_promise(this, "reason", reason);
-    },
-
-    each: function (xs, f) {
-      return reduce.call(xs, function (p, x) {
-        return p.then(function (v) {
-          return f(x, v);
-        });
-      }, this);
     }
-
   };
 
   function resolve_promise(promise, resolution, value) {
@@ -932,26 +967,27 @@
     this._queue = [];
   }
 
-  // Wrapper for then when a value may be either a promise-like object (with its
-  // own .then() method) or an actual value which can be used straight away. The
-  // first argument is returned. (Not the return value of f!)
-  flexo.then = function (maybe_promise, f, delay) {
-    if (maybe_promise && typeof maybe_promise.then === "function") {
-      maybe_promise.then(f);
-    } else if (delay) {
-      flexo.asap(function () {
-        f(maybe_promise);
-      });
-    } else {
-      f(maybe_promise);
+  flexo.then = function (v, f) {
+    if (v && typeof v.then === "function") {
+      return v.then(f);
     }
-    return maybe_promise;
+    return f(v);
   };
 
   flexo.while_p = function (p, f) {
     while (p()) {
       f();
     }
+  };
+
+  // Delay the execution of `f` by `delay_ms` millisecond (or 0 if the delay is
+  // negative or not a number.)
+  flexo.promise_delay = function (f, delay_ms) {
+    var promise = new flexo.Promise();
+    global_.setTimeout(function () {
+      promise.fulfill(flexo.funcify(f)());
+    }, delay_ms > 0 ? delay_ms : 0);
+    return promise;
   };
 
   // Create a promise that loads an image. `attrs` is a dictionary of attribute
@@ -1056,13 +1092,13 @@
     return promise;
   };
 
-  flexo.promise_fold = function (xs, f, z) {
+  flexo.promise_fold = function (xs, f, z, that) {
     var promise = new flexo.Promise();
     var g = function (z, i) {
       if (i === xs.length) {
         promise.fulfill(z);
       } else {
-        var y = f(z, xs[i], i, xs);
+        var y = f.call(that, z, xs[i], i, xs);
         if (y && typeof y.then === "function") {
           y.then(function (y_) {
             g(y_, i + 1);
@@ -1504,4 +1540,4 @@
     return g;
   };
 
-}(typeof exports === "object" ? exports : this.flexo = {}));
+}());
