@@ -6,6 +6,9 @@
     <link rel="stylesheet" href="http://openfontlibrary.org/face/freeuniversal">
     <link rel="stylesheet" href="../sketch.css">
     <script src="../flexo-0.2.3.min.js"></script>
+    <style>
+      body { background-color: #222; }
+    </style>
   </head>
   <body class="full">
     <svg class="full" viewBox="0 0 400 400" width="100%" height="100%">
@@ -19,20 +22,11 @@ var bbox = svg.viewBox.baseVal;
 var width = bbox.width;
 var height = bbox.height;
 
-var random_hue = (function () {
-  var golden_ratio_conjugate = 0.618033988749895;
-  var h = Math.random();
-  return function () {
-    h = (h + golden_ratio_conjugate) % 1;
-    return h;
-  };
-}());
-
 var h = height / bars;
 var hmin = Math.random() * 2 * π;
 var hmax = hmin + flexo.remap(Math.random(), 0, 1, π / 6, π);
 var s = 0.8;
-var v = 1;
+var v = 0.95;
 
 function gen(n) {
   var a = new Array(n);
@@ -44,7 +38,7 @@ function gen(n) {
 
 var hues = [];
 flexo.shuffle_array(gen(bars)).forEach(function (n, i) {
-  hues.push(random_hue());
+  hues.push(Math.random());
   var hues_ = flexo.shuffle_array(hues);
   var y = n * h;
   var w = width / (i + 1);
