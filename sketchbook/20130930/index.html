@@ -1,37 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Flexo Sketchbook — Mon 30 Sep 2013: CSS 3D dungeon</title>
+    <title>Flexo Sketchbook — Mon 30 Sep 2013: sunflower</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="http://openfontlibrary.org/face/freeuniversal">
     <link rel="stylesheet" href="../sketch.css">
-    <link rel="stylesheet" href="dungeon.css">
     <script src="../flexo-0.2.3.min.js"></script>
+    <style type="text/css">
+body {
+  width: 400px;
+  margin: 200px auto 0 auto;
+}
+    </style>
   </head>
-  <body class="full">
+  <body>
+    <canvas width="400" height="400"/>
+    <script type="text/javascript">
+(function () {
+ "use strict";
 
-    <div id="p4">
-      <div id="dungeon">
-        <div id="tiles">
-        </div>
-      </div>
-      <div id="inventory">
-      </div>
-      <div id="buttons">
-        <div id="dir-turn-left">➚</div>
-        <div id="dir-up">↑</div>
-        <div id="dir-turn-right">➚</div>
-        <div id="dir-left">←</div>
-        <div id="dir-down">↓</div>
-        <div id="dir-right">→</div>
-      </dvi>
-    </div>
-    <div id="console">
-    </div>
-    <div id="console-light"></div>
-    <div id="map-2d">
-    </div>
+  var MAX = 1000;
+  var canvas = document.querySelector("canvas");
+  var context = canvas.getContext("2d");
+  var offset = 0;
+  var angle = 2 * π / (1 + (1 + Math.sqrt(5)) / 2);
+  function draw() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    var x = canvas.width / 2;
+    var y = canvas.height / 2;
+    var c = Math.abs(11 * Math.sin(offset / 4));
+    var sz = Math.abs(4 * Math.sin(offset / 4));
+    var max = c * Math.sqrt(MAX);
+    for (var a = 0; a < MAX; ++a) {
+      var r = c * Math.sqrt(a);
+      x += Math.cos(angle * a) * r;
+      y += Math.sin(angle * a) * r;
+      context.fillStyle = flexo.hsv_to_hex(angle * a + offset, r / max,
+        Math.abs(Math.cos(offset / 5)));
+      context.beginPath();
+      context.arc(x, y, sz, 0, 2 * π, true);
+      context.fill();
+    }
+    offset += 0.025;
+    requestAnimationFrame(draw);
+  };
+  draw();
 
-    <script src="dungeon.js"></script>
+}());
+    </script>
   </body>
 </html>
