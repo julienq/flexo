@@ -26,7 +26,7 @@ to get an idea of what you can do.
 
 ## Changes
 
-### New in v0.2.3 (in progress)
+### New in v0.2.3
 
 * Improved error handling and added mimeType parameter for **ez_xhr**;
 * check input parameters for **split_uri** and **absolute_uri**;
