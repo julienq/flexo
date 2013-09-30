@@ -26,6 +26,10 @@ to get an idea of what you can do.
 
 ## Changes
 
+### New in v0.3.0 (In progress)
+
+* **TODO** Update promises to spec version 1.1.
+
 ### New in v0.2.3
 
 * Improved error handling and added mimeType parameter for **ez_xhr**;

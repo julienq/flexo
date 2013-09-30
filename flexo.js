@@ -7,7 +7,7 @@
     (function () { return this; }());
   var flexo = typeof exports === "object" ? exports : global_.flexo = {};
 
-  flexo.VERSION = "0.2.3";
+  flexo.VERSION = "0.3.0";
 
   var foreach = Array.prototype.forEach;
   var map = Array.prototype.map;

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — TODO: move</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="http://openfontlibrary.org/face/freeuniversal">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../../flexo.js"></script>
+    <style>
+body {
+  background-color: #187757;
+}
+
+.box {
+  padding: 1rem;
+  background-color: #f8f9f0;
+  color: #222;
+  display: inline-block;
+  position: absolute;
+  cursor: default;
+  box-shadow: 0 0 4px #222;
+}
+
+.box.drag {
+  cursor: none;
+  box-shadow: none;
+  border: solid 1px #222;
+  margin: -1px;
+}
+    </style>
+  </head>
+  <body class="full">
+    <div>
+      <div class="box">Move <span>this</span></div>
+      <div class="box">Move that</div>
+    </div>
+    <script>
+(function () {
+  "use strict";
+
+  function translate(elem, tx, ty) {
+    elem.style.transform = elem.style.webkitTransform =
+      "translate(%0px,%1px)".fmt(tx, ty);
+  }
+
+  var drag = {
+    handleEvent: function (e) {
+      if (e.type === "mousedown") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.button === 0) {
+          this.start(e, e.clientX, e.clientY);
+        }
+      } else if (e.type === "mousemove") {
+        this.move(e.clientX, e.clientY);
+      } else if (e.type === "mouseup") {
+        this.stop();
+      }
+    },
+
+    start: function (e, x, y) {
+      this.stop();
+      this.elem = e.currentTarget;
+      var rect = this.elem.getBoundingClientRect();
+      this.elem.__x = x - rect.left;
+      this.elem.__y = y - rect.top;
+      this.elem.classList.add("drag");
+      var p = this.elem.parentNode;
+      p.removeChild(this.elem);
+      p.appendChild(this.elem);
+    },
+
+    move: function (x, y) {
+      if (this.elem) {
+        translate(this.elem, x - this.elem.__x, y - this.elem.__y);
+      }
+    },
+
+    stop: function () {
+      if (this.elem) {
+        delete this.elem.__x;
+        delete this.elem.__y;
+        this.elem.classList.remove("drag");
+        delete this.elem;
+      }
+    }
+  };
+
+  Array.prototype.forEach.call(document.querySelectorAll(".box"), function (b) {
+    b.addEventListener("mousedown", drag, false);
+    var rect = b.getBoundingClientRect();
+    translate(b,
+      flexo.random_int(0, window.innerWidth - rect.width),
+      flexo.random_int(0, window.innerHeight - rect.height));
+  });
+  document.addEventListener("mouseup", drag, false);
+  document.addEventListener("mousemove", drag, false);
+
+}());
+    </script>
+  </body>
+</html>
