@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Tue 1 Oct 2013: colorwheel</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../flexo-0.2.3.min.js"></script>
+    <style>
+#colorpicker { width: 240px; position: relative; }
+    </style>
+  </head>
+  <body>
+    <div id="colorpicker">
+      <canvas id="colorwheel"/>
+    </div>
+    <script type="text/javascript">
+(function () {
+ "use strict";
+
+  function colorwheel(cx, cy, r, v, context) {
+    var img = context.createImageData(context.canvas.width,
+      context.canvas.height);
+    var index = 0;
+    for (var x = cx - r; x <= cx + r; ++x) {
+      for (var y = cy - r; y <= cy + r; ++y) {
+        var dx = cx - x;
+        var dy = cy - y;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < r) {
+          var h = π + Math.atan2(dy, dx);
+          var color = flexo.hsv_to_rgb(h, d / r, v);
+          var index = (x + y * img.width) * 4;
+          img.data[index + 0] = color[0];
+          img.data[index + 1] = color[1];
+          img.data[index + 2] = color[2];
+          img.data[index + 3] = 0xff;
+        }
+      }
+    }
+    context.putImageData(img, 0, 0);
+    context.beginPath();
+    context.lineWidth = 2;
+    context.arc(cx, cy, r, 0, 2 * π, false);
+    context.stroke();
+  }
+
+  var v = 1;
+  var w = document.getElementById("colorpicker").offsetWidth;
+  var canvas = document.getElementById("colorwheel");
+  canvas.width = w;
+  canvas.height = w;
+  var contextw = canvas.getContext("2d");
+  var rw = w / 2;
+  colorwheel(rw, rw, rw - 1, v, contextw);
+
+}());
+    </script>
+  </body>
+</html>
