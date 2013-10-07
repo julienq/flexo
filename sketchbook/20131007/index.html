@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Mon 7 Oct 2013: PPM display</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <style>
+body {
+  background-color: #222;
+  color: #f8f9f0;
+}
+
+canvas {
+  background-color: #f8f9f0;
+}
+
+canvas.drag {
+  background-color: #08f;
+}
+    </style>
+  </head>
+  <body>
+    <canvas></canvas>
+    <p>Drag a PPM file in the canvas above.</p>
+    <script>
+"use strict";
+
+var canvas = document.querySelector("canvas");
+
+var drop = {
+  handleEvent: function (e) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (e.type === "dragenter") {
+      canvas.classList.add("drag");
+    } else if (e.type === "dragleave") {
+      canvas.classList.remove("drag");
+    } else if (e.type === "drop") {
+      canvas.classList.remove("drag");
+      if (e.dataTransfer.files.length === 1) {
+        this.reader = new FileReader();
+        this.reader.addEventListener("load", this, false);
+        this.reader.addEventListener("error", this, false);
+        this.reader.readAsBinaryString(e.dataTransfer.files[0]);
+      }
+    } else if (e.type === "load") {
+      display(this.reader.result);
+      delete this.reader;
+    } else if (e.type === "error") {
+      alert("Error reading file");
+      delete this.reader;
+    }
+  }
+}
+
+function display(ppm) {
+  var m = ppm.match(/^P6 (\d+) (\d+) 255 /);
+  if (m) {
+    var w = canvas.width = m[1];
+    canvas.style.width = m[1] + "px";
+    var h = canvas.height = m[2];
+    canvas.style.height = m[2] + "px";
+    var context = canvas.getContext("2d");
+    var imagedata = context.getImageData(0, 0, w, h);
+    var pixeldata = ppm.substr(m[0].length);
+    console.log(pixeldata);
+    for (var i = 0, offset = 0, y = 0; y < h; ++y) {
+      for (var x = 0; x < w; ++x) {
+        imagedata.data[offset++] = pixeldata.charCodeAt(i++);
+        imagedata.data[offset++] = pixeldata.charCodeAt(i++);
+        imagedata.data[offset++] = pixeldata.charCodeAt(i++);
+        imagedata.data[offset++] = 255;
+      }
+    }
+    context.putImageData(imagedata, 0, 0);
+  } else {
+    alert("Unrecognized format");
+  }
+}
+
+canvas.addEventListener("dragenter", drop, false);
+canvas.addEventListener("dragover", drop, false);
+canvas.addEventListener("dragleave", drop, false);
+canvas.addEventListener("drop", drop, false);
+
+    </script>
+  </body>
+</html>
