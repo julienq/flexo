@@ -8,6 +8,31 @@
       "translate(%0px,%1px)".fmt(tx, ty);
   };
 
+  // TODO get x/y position as well, button, touches, &c.
+  var push = {
+    handleEvent: function (e) {
+      if (e.type === "mousedown" || e.type === "touchstart") {
+        e.preventDefault();
+        this.down = true;
+      } else {
+        if (this.down) {
+          this.down = false;
+          flexo.notify(e.currentTarget, "push");
+        }
+      }
+    },
+  };
+
+  ui.pushable = function (node) {
+    var p = Object.create(push);
+    p.down = false;
+    node.addEventListener("mousedown", p, false);
+    document.addEventListener("mouseup", p, false);
+    node.addEventListener("touchstart", p, false);
+    node.addEventListener("touchend", p, false);
+    return node;
+  };
+
   var drag = {
 
     elements: [],

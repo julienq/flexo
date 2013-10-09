@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — poetry magnets</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../../flexo.js"></script>
+    <script src="../ui.js"></script>
+    <style>
+html, body {
+  height: 100%;
+}
+
+body {
+  background-color: #187757;
+  margin: 0;
+}
+
+.magnet {
+  padding: 1rem;
+  background-color: #f8f9f0;
+  color: #222;
+  display: inline-block;
+  position: absolute;
+  cursor: default;
+  box-shadow: 0 0 4px #222;
+}
+
+.magnet.Symbols {
+  font-family: sans-serif;
+}
+
+.magnet.drag {
+  cursor: none;
+  box-shadow: none;
+  border: solid 1px #222;
+  margin: -1px;
+}
+    </style>
+  </head>
+  <body class="full">
+    <script>
+(function () {
+  "use strict";
+
+  var cats = [];
+  var urns = {};
+  var ready = false;
+
+  flexo.ez_xhr("words.json").then(function (json) {
+    var words = JSON.parse(json);
+    cats = Object.keys(words).slice();
+    Object.keys(words).forEach(function (key) {
+      urns[key] = new flexo.Urn(words[key]);
+    });
+    ready = true;
+  }, function (reason) {
+    alert("Could not get words: %0".fmt(reason));
+  });
+
+  flexo.listen(flexo.ui.pushable(document), "push", function () {
+    if (ready) {
+      var cat = flexo.random_element(cats);
+      var magnet = document.body.appendChild(
+        flexo.$div({ "class": "magnet %0".fmt(cat) }, urns[cat].pick()));
+      flexo.ui.draggable(magnet);
+      var rect = magnet.getBoundingClientRect();
+      flexo.ui.translate(magnet,
+        flexo.random_int(0, window.innerWidth - rect.width),
+        flexo.random_int(0, window.innerHeight - rect.height));
+    }
+  });
+
+}());
+    </script>
+  </body>
+</html>
