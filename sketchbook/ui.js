@@ -33,7 +33,7 @@
     return node;
   };
 
-  var drag = {
+  var drag = ui.drag = {
 
     elements: [],
 
@@ -42,16 +42,33 @@
         e.preventDefault();
         e.stopPropagation();
         if (e.button === 0) {
-          this.start(e, e.clientX, e.clientY);
+          this.set_offset(e);
+          this.start(e.clientX - this.x, e.clientY - this.y, e);
+        }
+      } else if (e.type === "touchstart") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.touches.length > 0) {
+          this.set_offset(e);
+          this.start(e.touches[0].clientX - this.x,
+              e.touches[0].clientY - this.y, e);
         }
       } else if (e.type === "mousemove") {
-        this.move(e.clientX, e.clientY);
-      } else if (e.type === "mouseup") {
+        this.move(e.clientX - this.x, e.clientY - this.y);
+      } else if (e.type === "touchmove" && e.touches.length > 0) {
+        this.move(e.touches[0].clientX - this.x, e.touches[0].clientY - this.y);
+      } else if (e.type === "mouseup" || e.type == "touchend") {
         this.stop();
       }
     },
 
-    start: function (e, x, y) {
+    set_offset: function (e) {
+      var rect = e.currentTarget.getBoundingClientRect();
+      this.x = rect.left;
+      this.y = rect.top;
+    },
+
+    start: function (x, y, e) {
       this.stop();
       this.elem = e.currentTarget;
       var rect = this.elem.getBoundingClientRect();
@@ -73,14 +90,22 @@
       if (this.elem) {
         delete this.elem.__x;
         delete this.elem.__y;
+        delete this.x;
+        delete this.y;
         this.elem.classList.remove("drag");
         delete this.elem;
       }
     }
   };
 
-  ui.draggable = function (element) {
+  ui.draggable = function (element, drag) {
+    if (typeof drag === "undefined") {
+      drag = ui.drag;
+    }
     element.addEventListener("mousedown", drag, false);
+    element.addEventListener("touchstart", drag, false);
+    element.addEventListener("touchmove", drag, false);
+    element.addEventListener("touchend", drag, false);
     if (drag.elements.length === 0) {
       document.addEventListener("mouseup", drag, false);
       document.addEventListener("mousemove", drag, false);

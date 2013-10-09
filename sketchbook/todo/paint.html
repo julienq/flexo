@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — TODO: paint</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../flexo-0.2.3.min.js"></script>
+    <script src="../ui.js"></script>
+    <style>
+body {
+  background-color: #888;
+}
+
+.canvases {
+  width: 400px;
+  height: 300px;
+  background-color: #f8f9f0;
+}
+
+.canvases canvas {
+  position: absolute;
+}
+    </style>
+  </head>
+  <body>
+    <div class="canvases">
+      <canvas width="400" height="300"></canvas>
+      <canvas width="400" height="300"></canvas>
+    </div>
+    <script type="text/javascript">
+(function () {
+ "use strict";
+
+  var bg = document.querySelectorAll("canvas")[0].getContext("2d");
+  var fg = document.querySelectorAll("canvas")[1].getContext("2d");
+  fg.lineCap = "round";
+  fg.lineJoin = "round";
+  fg.strokeStyle = "#222";
+  fg.lineWidth = 4;
+
+  var draw = Object.create(flexo.ui.drag);
+
+  draw.start = function (x, y) {
+    this.drawing = true;
+    fg.beginPath();
+    fg.moveTo(x, y);
+  };
+
+  draw.move = function (x, y) {
+    if (this.drawing) {
+      fg.clearRect(0, 0, fg.canvas.width, fg.canvas.height);
+      fg.lineTo(x, y);
+      fg.stroke();
+    }
+  };
+
+  draw.stop = function () {
+    if (this.drawing) {
+      bg.drawImage(fg.canvas, 0, 0);
+      fg.clearRect(0, 0, fg.canvas.width, fg.canvas.height);
+    }
+    this.drawing = false;
+  };
+
+  var canvas = flexo.ui.draggable(fg.canvas, draw);
+
+}());
+    </script>
+  </body>
+</html>
