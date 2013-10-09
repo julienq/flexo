@@ -14,47 +14,48 @@
     <svg class="full" viewBox="0 0 400 400" width="100%" height="100%">
     </svg>
     <script>
-"use strict";
+(function () {
+  "use strict";
 
-var bars = 40;
-var svg = document.querySelector("svg");
-var bbox = svg.viewBox.baseVal;
-var width = bbox.width;
-var height = bbox.height;
+  var bars = 40;
+  var svg = document.querySelector("svg");
+  var bbox = svg.viewBox.baseVal;
+  var width = bbox.width;
+  var height = bbox.height;
 
-function gen(n) {
-  var a = new Array(n);
-  for (var i = 0; i < n; ++i) {
-    a[i] = i;
-  }
-  return a;
-}
-
-function refresh() {
-  var h = height / bars;
-  var hmin = Math.random() * 2 * π;
-  var hmax = hmin + flexo.remap(Math.random(), 0, 1, π / 6, π);
-  var s = 0.8;
-  var v = 0.95;
-  var hues = [];
-  flexo.remove_children(svg);
-  flexo.shuffle_array(gen(bars)).forEach(function (n, i) {
-    hues.push(Math.random());
-    var hues_ = flexo.shuffle_array(hues);
-    var y = n * h;
-    var w = width / (i + 1);
-    for (var j = 0; j <= i; ++j) {
-      var color = flexo.hsv_to_hex(flexo.remap(hues_[j], 0, 1, hmin, hmax),
-        s, v);
-      svg.appendChild(flexo.$rect({ x: j * w, y: y, width: w, height: h,
-        fill: color, stroke: color }));
+  function gen(n) {
+    var a = new Array(n);
+    for (var i = 0; i < n; ++i) {
+      a[i] = i;
     }
-  });
-}
+    return a;
+  }
 
-flexo.listen(flexo.ui.pushable(document), "push", refresh);
-refresh();
+  function refresh() {
+    var h = height / bars;
+    var hmin = Math.random() * 2 * π;
+    var hmax = hmin + flexo.remap(Math.random(), 0, 1, π / 6, π);
+    var s = 0.8;
+    var v = 0.95;
+    var hues = [];
+    flexo.remove_children(svg);
+    flexo.shuffle_array(gen(bars)).forEach(function (n, i) {
+      hues.push(Math.random());
+      var hues_ = flexo.shuffle_array(hues);
+      var y = n * h;
+      var w = width / (i + 1);
+      for (var j = 0; j <= i; ++j) {
+        var color = flexo.hsv_to_hex(flexo.remap(hues_[j], 0, 1, hmin, hmax),
+          s, v);
+        svg.appendChild(flexo.$rect({ x: j * w, y: y, width: w, height: h,
+          fill: color, stroke: color }));
+      }
+    });
+  }
 
+  flexo.listen(flexo.ui.pushable(document), "push", refresh)();
+
+}());
     </script>
   </body>
 </html>
