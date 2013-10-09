@@ -1,0 +1,33 @@
+@import url(http://openfontlibrary.org/face/freeuniversal);
+
+html {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font: 1.2rem/1.2 FreeUniversal, "Helvetica Neue", Helvetica, sans-serif;
+}
+
+body.full {
+  height: 100%;
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+  color: #ff4040;
+  font-weight: bold;
+}
+
+svg.full {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+.done {
+  background-color: yellow;
+  padding: 0 0.25em;
+  margin: 0 -0.25em;
+}

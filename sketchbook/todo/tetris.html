@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!-- Cf http://eed3si9n.com/tetrix-in-scala/Combined+Pages.html -->
+  <head>
+    <title>Flexo Sketchbook — TODO: SVG Tetris</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../flexo-0.2.3.min.js"></script>
+  </head>
+  <body class="full">
+    <svg class="full" width="100%" height="100%">
+      <rect width="100%" height="100%" fill="rgb(48, 99, 99)"></rect>
+      <svg viewBox="0 0 700 400">
+        <line x2="700" stroke="white"/>
+        <line y1="400" y2="400" x2="700" stroke="white"/>
+        <g id="grid" stroke="rgb(84, 143, 140)" fill="none">
+        </g>
+        <g id="blocks" fill="rgb(150, 204, 204)" stroke="rgb(150, 204, 204)">
+        </g>
+        <g id="current" fill="rgb(210, 255, 255)" stroke="rgb(210, 255, 255)">
+        </g>
+        <text y="380" x="20" font-size="100" fill="white"/>
+      </svg>
+    </svg>
+    <script>
+(function () {
+  "use strict";
+
+  var tetris = window.tetris = {};
+
+  var block = (tetris.Block = function (x, y, kind) {
+    this.x = x;
+    this.y = y;
+    this.kind = kind;
+  }).prototype;
+
+  var piece = (tetris.Piece = function (x, y, kind) {
+    this.x = x;
+    this.y = y;
+    this.kind = kind;
+  }).prototype;
+
+  piece.current = function () {
+    return piece.current[this.kind];
+  };
+
+  piece.current.I = [[-1, 0], [0, 0], [1, 0], [0, 1]];
+  piece.current.J = [[-1, 0], [0, 0], [1, 0], [0, 1]];
+  piece.current.L = [[-1, 0], [0, 0], [1, 0], [0, 1]];
+  piece.current.O = [[-1, 0], [0, 0], [1, 0], [0, 1]];
+  piece.current.S = [[-1, 0], [0, 0], [1, 0], [0, 1]];
+  piece.current.T = [[-1, 0], [0, 0], [1, 0], [0, 1]];
+  piece.current.Z = [[-1, 0], [0, 0], [1, 0], [0, 1]];
+
+  var gameview = (tetris.GameView = function (w, h) {
+    this.width = w;
+    this.height = h;
+    this.blocks = [];   // list of blocks in the grid
+    this.current = [];  // list of current blocks
+    this.grid = document.getElementById("grid");
+    this.blocks_g = document.getElementById("blocks");
+    this.current_g = document.getElementById("current");
+    var svg = this.grid.parentNode;
+    var vb = svg.viewBox.baseVal;
+    this.block_size = Math.min(vb.width / (this.width + 2),
+      vb.height / (this.height + 2));
+  }).prototype;
+
+  gameview.append_block = function (parent, x, y) {
+    var x_ = this.block_size * (1 + x);
+    var y_ = this.block_size * (this.height - y);
+    parent.appendChild(flexo.$rect({ x: x_, y: y_, width: this.block_size,
+          height: this.block_size }));
+  };
+
+  gameview.draw_empty_grid = function () {
+    flexo.remove_children(this.grid);
+    for (var x = 0; x < this.width; ++x) {
+      for (var y = 0; y < this.height; ++y) {
+        this.append_block(this.grid, x, y);
+      }
+    }
+  };
+
+  gameview.draw_blocks = function (parent, blocks) {
+    flexo.remove_children(parent);
+    blocks.forEach(function (block) {
+      this.append_block(parent, block.x, block.y);
+    }, this);
+  };
+
+  gameview.update = function () {
+    this.draw_empty_grid();
+    this.draw_blocks(this.blocks_g, this.blocks);
+    this.draw_blocks(this.current_g, this.current);
+  };
+
+  var view = new tetris.GameView(10, 20);
+
+  view.blocks = [new tetris.Block(0, 0, "T")];
+  view.current = [new tetris.Block(5, 5, "T"), new tetris.Block(6, 5, "T"),
+    new tetris.Block(7, 5, "T"), new tetris.Block(6, 6, "T")];
+  view.update();
+
+  var keys = [];
+
+  keys[32] = function (e) {
+    // space
+    document.querySelector("text").textContent = "space";
+  };
+
+  keys[37] = function (e) {
+    // left
+    document.querySelector("text").textContent = "left";
+  };
+
+  keys[38] = function (e) {
+    // up
+    document.querySelector("text").textContent = "up";
+  };
+
+  keys[39] = function (e) {
+    // right
+    document.querySelector("text").textContent = "right";
+  };
+
+  keys[40] = function (e) {
+    // down
+    document.querySelector("text").textContent = "down";
+  };
+
+  document.addEventListener("keydown", function (e) {
+    var f = keys[e.which];
+    if (typeof f === "function") {
+      f(e);
+      view.update();
+    }
+  }, false);
+
+
+}());
+    </script>
+  </body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Mon 23 Sep 2013: SVG road tiles</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../flexo-0.2.3.min.js"></script>
+  </head>
+  <body class="full">
+    <svg class="full" viewBox="0 0 300 300" width="100%" height="100%">
+      <defs>
+        <pattern id="dots" patternUnits="userSpaceOnUse"
+          x="0" y="0" width="12" height="12" viewBox="0 0 12 12">
+          <rect fill="#ccc" width="20" height="20"/>
+          <circle fill="#8f0" cx="1" cy="1" r="1"/>
+          <circle fill="#8f0" cx="5" cy="1" r="1"/>
+          <circle fill="#8f0" cx="9" cy="1" r="1"/>
+          <circle fill="#8f0" cx="3" cy="3" r="1"/>
+          <circle fill="#8f0" cx="7" cy="3" r="1"/>
+          <circle fill="#8f0" cx="11" cy="3" r="1"/>
+          <circle fill="#8f0" cx="1" cy="5" r="1"/>
+          <circle fill="#8f0" cx="5" cy="5" r="1"/>
+          <circle fill="#8f0" cx="9" cy="5" r="1"/>
+          <circle fill="#8f0" cx="3" cy="7" r="1"/>
+          <circle fill="#8f0" cx="7" cy="7" r="1"/>
+          <circle fill="#8f0" cx="11" cy="7" r="1"/>
+          <circle fill="#8f0" cx="1" cy="9" r="1"/>
+          <circle fill="#8f0" cx="5" cy="9" r="1"/>
+          <circle fill="#8f0" cx="9" cy="9" r="1"/>
+          <circle fill="#8f0" cx="3" cy="11" r="1"/>
+          <circle fill="#8f0" cx="7" cy="11" r="1"/>
+          <circle fill="#8f0" cx="11" cy="11" r="1"/>
+        </pattern>
+        <g fill="white" fill-opacity="0.75" id="building">
+          <polyline points="30,70 70,70 100,40 60,40"></polyline>
+          <polyline points="30,70 60,40 60,0 30,30"></polyline>
+          <rect width="40" height="40" x="60" y="0"></rect>
+        </g>
+        <path fill="#08f" id="pond"></path>
+        <g id="road">
+          <rect fill="#ccc" width="20" height="100"></rect>
+          <g stroke="#fff">
+            <line x1="10" x2="10" y1="4" y2="16"></line>
+            <line x1="10" x2="10" y1="24" y2="36"></line>
+            <line x1="10" x2="10" y1="44" y2="56"></line>
+            <line x1="10" x2="10" y1="64" y2="76"></line>
+            <line x1="10" x2="10" y1="84" y2="96"></line>
+          </g>
+        </g>
+        <g id="road-crosswalk">
+          <rect fill="#ccc" width="20" height="100"></rect>
+          <g stroke="#fff">
+            <line x1="10" x2="10" y1="4" y2="16"></line>
+            <line x1="10" x2="10" y1="24" y2="36"></line>
+            <g stroke-width="2">
+              <line x1="2" x2="2" y1="44" y2="56"></line>
+              <line x1="6" x2="6" y1="44" y2="56"></line>
+              <line x1="10" x2="10" y1="44" y2="56"></line>
+              <line x1="14" x2="14" y1="44" y2="56"></line>
+              <line x1="18" x2="18" y1="44" y2="56"></line>
+            </g>
+            <line x1="10" x2="10" y1="64" y2="76"></line>
+            <line x1="10" x2="10" y1="84" y2="96"></line>
+          </g>
+        </g>
+        <g id="tile-straight">
+          <use xlink:href="#road"></use>
+        </g>
+        <g id="tile-straightc">
+          <use xlink:href="#road-crosswalk"></use>
+        </g>
+        <g id="tile-bend">
+          <use xlink:href="#road"></use>
+          <use xlink:href="#road" transform="rotate(-90) translate(-20)"></use>
+        </g>
+        <g id="tile-bendc">
+          <use xlink:href="#road" transform="rotate(-90) translate(-20)"></use>
+          <use xlink:href="#road-crosswalk"></use>
+        </g>
+        <g id="tile-parallel">
+          <use xlink:href="#road-crosswalk"></use>
+          <use xlink:href="#road" transform="translate(80)"></use>
+        </g>
+      </defs>
+      <g id="tiles">
+        <rect width="300" height="300" fill="url(#dots)"></rect>
+      </g>
+    </svg>
+    <script src="draw.js"></script>
+    <script src="tiles.js"></script>
+  </body>
+</html>

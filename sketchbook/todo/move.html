@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — TODO: move</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../../flexo.js"></script>
+    <script src="../ui.js"></script>
+    <style>
+body {
+  background-color: #187757;
+}
+
+.box {
+  padding: 1rem;
+  background-color: #f8f9f0;
+  color: #222;
+  display: inline-block;
+  position: absolute;
+  cursor: default;
+  box-shadow: 0 0 4px #222;
+}
+
+.box.drag {
+  cursor: none;
+  box-shadow: none;
+  border: solid 1px #222;
+  margin: -1px;
+}
+    </style>
+  </head>
+  <body class="full">
+    <div>
+      <div class="box">Move <span>this</span></div>
+      <div class="box">Move that</div>
+    </div>
+    <script>
+(function () {
+  "use strict";
+
+  Array.prototype.forEach.call(document.querySelectorAll(".box"), function (b) {
+    flexo.ui.draggable(b);
+    var rect = b.getBoundingClientRect();
+    flexo.ui.translate(b,
+      flexo.random_int(0, window.innerWidth - rect.width),
+      flexo.random_int(0, window.innerHeight - rect.height));
+  });
+
+}());
+    </script>
+  </body>
+</html>
