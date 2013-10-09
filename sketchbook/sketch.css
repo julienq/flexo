@@ -16,7 +16,7 @@ body.full {
 
 a {
   text-decoration: none;
-  color: #ff4040;
+  color: #333;
   font-weight: bold;
 }
 
@@ -27,7 +27,7 @@ svg.full {
 }
 
 .done {
-  background-color: yellow;
+  background-color: #0f8;
   padding: 0 0.25em;
   margin: 0 -0.25em;
 }
