@@ -13,9 +13,11 @@ to get an idea of what you can do.
 
 ## Samples
 
-* An [SVG clock](http://www.romulusetrem.us/flexo/samples/clock.svg)
+* An [SVG clock](http://www.romulusetrem.us/flexo/sketchbook/20131010/)
 * [Random gradients](http://www.romulusetrem.us/flexo/samples/gradients.svg)
 * Random portraits, loading the images using promises either [in parallel](http://www.romulusetrem.us/flexo/samples/portraits.html) or [in sequence](http://www.romulusetrem.us/flexo/samples/portraits.html?par=false).
+
+See also the [Flexo sketchbook](http://romulusetrem.us/flexo/sketchbook) for more.
 
 ## TODO
 
