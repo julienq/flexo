@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Sat 12 Oct 2013: SVG gradients</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../flexo-0.2.3.min.js"></script>
+    <script src="../ui.js"></script>
+    <style>
+body {
+  background-color: yellow;
+}
+    </style>
+  </head>
+  <body class="full">
+    <svg class="full" width="100%" height="100%">
+      <defs>
+        <linearGradient id="gradient">
+          <stop offset="0%" stop-color="black"></stop>
+          <stop offset="100%" stop-color="white"></stop>
+        </linearGradient>
+      </defs>
+      <g></g>
+    </svg>
+    <script>
+(function () {
+  "use strict";
+
+  var args = flexo.get_args({ w: 16, h: 12, sz: 100 });
+
+  var svg = document.querySelector("svg");
+  svg.setAttribute("viewBox", "%0 %0 %1 %2".fmt(-args.sz / 2,
+    (args.w + 1) * args.sz, (args.h + 1) * args.sz));
+  var g = svg.querySelector("g");
+
+  function refresh() {
+    var rects = [];
+    for (var y = 0; y < args.h; ++y) {
+      for (var x = 0; x < args.w; ++x) {
+        rects.push(flexo.$rect({ x: x * args.sz, y: y * args.sz,
+          width: args.sz, height: args.sz, fill: "url(#gradient)",
+          transform: "rotate(%0, %1, %2)".fmt(flexo.random_int(360),
+            (x + .5) * args.sz, (y + .5) * args.sz) }));
+      }
+    }
+    flexo.remove_children(g);
+    flexo.shuffle_array(rects).forEach(function(rect) {
+      g.appendChild(rect);
+    });
+  }
+
+  flexo.listen(flexo.ui.pushable(document), "push", refresh)();
+
+}());
+    </script>
+  </body>
+</html>
