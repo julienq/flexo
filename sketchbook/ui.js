@@ -12,11 +12,18 @@
   var push = {
     handleEvent: function (e) {
       if ((e.type === "mousedown" || e.type === "touchstart") &&
-        !(e.classList && e.classList.contains("disabled"))) {
+        !(e.currentTarget.classList &&
+          e.currentTarget.classList.contains("disabled"))) {
         e.preventDefault();
         this.down = e.currentTarget;
+        if (this.down.classList) {
+          this.down.classList.add("down");
+        }
       } else {
         if (this.down) {
+          if (this.down.classList) {
+            this.down.classList.remove("down");
+          }
           flexo.notify(this.down, "push");
           delete this.down;
         }
@@ -37,19 +44,21 @@
 
     elements: [],
 
+    timeout: flexo.nop,
+
     handleEvent: function (e) {
       if (e.type === "mousedown") {
-        e.preventDefault();
-        e.stopPropagation();
         if (e.button === 0 && !e.target.isContentEditable) {
+          e.preventDefault();
+          e.stopPropagation();
           this.set_timeout(e);
           this.set_offset(e);
           this.start(e.clientX - this.x, e.clientY - this.y, e);
         }
       } else if (e.type === "touchstart") {
-        e.preventDefault();
-        e.stopPropagation();
         if (e.touches.length > 0 && !e.target.isContentEditable) {
+          e.preventDefault();
+          e.stopPropagation();
           this.set_timeout(e);
           this.set_offset(e);
           this.start(e.touches[0].clientX - this.x,
@@ -67,17 +76,16 @@
     },
 
     set_timeout: function (e) {
-      var current_target = e.currentTarget;
-      var target = e.target;
-      if (this.timeout >= 0) {
+      var args = { currentTarget: e.currentTarget, target: e.target };
+      flexo.notify(args.currentTarget, "drag", args);
+      console.log("drag", args.currentTarget);
+      var timeout = this.timeout(e);
+      if (timeout >= 0) {
         this.__timeout = window.setTimeout(function () {
           delete this.__timeout;
           this.stop();
-          flexo.notify(current_target, "undrag", {
-            currentTarget: current_target,
-            target: target
-          });
-        }.bind(this), this.timeout);
+          flexo.notify(args.currentTarget, "undrag", args);
+        }.bind(this), timeout);
       }
     },
 
@@ -137,6 +145,22 @@
       document.addEventListener("mousemove", drag, false);
     }
     drag.elements.push(element);
+    return element;
+  };
+
+  ui.undraggable = function (element, drag) {
+    if (typeof drag === "undefined") {
+      drag = ui.drag;
+    }
+    element.removeEventListener("mousedown", drag, false);
+    element.removeEventListener("touchstart", drag, false);
+    element.removeEventListener("touchmove", drag, false);
+    element.removeEventListener("touchend", drag, false);
+    flexo.remove_from_array(drag.elements, element);
+    if (drag.elements.length === 0) {
+      document.removeEventListener("mouseup", drag, false);
+      document.removeEventListener("mousemove", drag, false);
+    }
     return element;
   };
 
