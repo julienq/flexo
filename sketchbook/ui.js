@@ -11,13 +11,14 @@
   // TODO get x/y position as well, button, touches, &c.
   var push = {
     handleEvent: function (e) {
-      if (e.type === "mousedown" || e.type === "touchstart") {
+      if ((e.type === "mousedown" || e.type === "touchstart") &&
+        !(e.classList && e.classList.contains("disabled"))) {
         e.preventDefault();
-        this.down = true;
+        this.down = e.currentTarget;
       } else {
         if (this.down) {
-          this.down = false;
-          flexo.notify(e.currentTarget, "push");
+          flexo.notify(this.down, "push");
+          delete this.down;
         }
       }
     },
@@ -25,7 +26,6 @@
 
   ui.pushable = function (node) {
     var p = Object.create(push);
-    p.down = false;
     node.addEventListener("mousedown", p, false);
     document.addEventListener("mouseup", p, false);
     node.addEventListener("touchstart", p, false);
@@ -41,24 +41,50 @@
       if (e.type === "mousedown") {
         e.preventDefault();
         e.stopPropagation();
-        if (e.button === 0) {
+        if (e.button === 0 && !e.target.isContentEditable) {
+          this.set_timeout(e);
           this.set_offset(e);
           this.start(e.clientX - this.x, e.clientY - this.y, e);
         }
       } else if (e.type === "touchstart") {
         e.preventDefault();
         e.stopPropagation();
-        if (e.touches.length > 0) {
+        if (e.touches.length > 0 && !e.target.isContentEditable) {
+          this.set_timeout(e);
           this.set_offset(e);
           this.start(e.touches[0].clientX - this.x,
               e.touches[0].clientY - this.y, e);
         }
       } else if (e.type === "mousemove") {
+        this.clear_timeout();
         this.move(e.clientX - this.x, e.clientY - this.y);
       } else if (e.type === "touchmove" && e.touches.length > 0) {
+        this.clear_timeout();
         this.move(e.touches[0].clientX - this.x, e.touches[0].clientY - this.y);
       } else if (e.type === "mouseup" || e.type == "touchend") {
         this.stop();
+      }
+    },
+
+    set_timeout: function (e) {
+      var current_target = e.currentTarget;
+      var target = e.target;
+      if (this.timeout >= 0) {
+        this.__timeout = window.setTimeout(function () {
+          delete this.__timeout;
+          this.stop();
+          flexo.notify(current_target, "undrag", {
+            currentTarget: current_target,
+            target: target
+          });
+        }.bind(this), this.timeout);
+      }
+    },
+
+    clear_timeout: function () {
+      if (this.__timeout) {
+        window.clearTimeout(this.__timeout);
+        delete this.__timeout;
       }
     },
 
@@ -113,5 +139,13 @@
     drag.elements.push(element);
     return element;
   };
+
+  (function () {
+    ui.l = {};
+    Array.prototype.forEach.call(document.querySelectorAll("[data-key]"),
+      function (elem) {
+        ui.l[elem.dataset.key] = elem.textContent;
+      });
+  }());
 
 }());
