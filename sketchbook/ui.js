@@ -78,7 +78,6 @@
     set_timeout: function (e) {
       var args = { currentTarget: e.currentTarget, target: e.target };
       flexo.notify(args.currentTarget, "drag", args);
-      console.log("drag", args.currentTarget);
       var timeout = this.timeout(e);
       if (timeout >= 0) {
         this.__timeout = window.setTimeout(function () {

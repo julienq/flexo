@@ -1344,6 +1344,13 @@
     return p;
   };
 
+  // Find the first ancestor of a node (including itself) that matches a
+  // predicate.
+  flexo.find_ancestor_or_self = function (node, p) {
+    for (; node && !p(node); node = node.parentNode) {}
+    return node;
+  }
+
   // Remove all children of an element
   flexo.remove_children = function (elem) {
     while (elem.firstChild) {
@@ -1372,6 +1379,17 @@
     } else {
       elem.classList.remove(c);
     }
+  };
+
+  // Split a text node into two at the give offset. Return the newly created
+  // text node.
+  flexo.split_text_node = function (node, offset) {
+    var n = node.ownerDocument.createTextNode(node.textContent.substr(offset));
+    if (node.parentNode) {
+      node.parentNode.insertBefore(n, node.nextSibling);
+    }
+    node.textContent = node.textContent.substr(0, offset);
+    return n;
   };
 
 

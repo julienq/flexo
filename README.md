@@ -30,6 +30,8 @@ See also the [Flexo sketchbook](http://romulusetrem.us/flexo/sketchbook) for mor
 
 ### New in v0.3.0 (In progress)
 
+* **split_text_node**;
+* **find_ancestor_or_self**;
 * **TODO** Update promises to spec version 1.1.
 
 ### New in v0.2.3
