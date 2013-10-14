@@ -116,6 +116,7 @@
     move: function (x, y) {
       if (this.elem) {
         ui.translate(this.elem, x - this.elem.__x, y - this.elem.__y);
+        return true;
       }
     },
 
@@ -127,6 +128,7 @@
         delete this.y;
         this.elem.classList.remove("drag");
         delete this.elem;
+        return true;
       }
     }
   };
