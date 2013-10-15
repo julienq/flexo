@@ -11,13 +11,21 @@
   // TODO get x/y position as well, button, touches, &c.
   var push = {
     handleEvent: function (e) {
-      if (e.type === "mousedown" || e.type === "touchstart") {
+      if ((e.type === "mousedown" || e.type === "touchstart") &&
+        !(e.currentTarget.classList &&
+          e.currentTarget.classList.contains("disabled"))) {
         e.preventDefault();
-        this.down = true;
+        this.down = e.currentTarget;
+        if (this.down.classList) {
+          this.down.classList.add("down");
+        }
       } else {
         if (this.down) {
-          this.down = false;
-          flexo.notify(e.currentTarget, "push");
+          if (this.down.classList) {
+            this.down.classList.remove("down");
+          }
+          flexo.notify(this.down, "push");
+          delete this.down;
         }
       }
     },
@@ -25,7 +33,6 @@
 
   ui.pushable = function (node) {
     var p = Object.create(push);
-    p.down = false;
     node.addEventListener("mousedown", p, false);
     document.addEventListener("mouseup", p, false);
     node.addEventListener("touchstart", p, false);
@@ -37,28 +44,54 @@
 
     elements: [],
 
+    timeout: flexo.nop,
+
     handleEvent: function (e) {
       if (e.type === "mousedown") {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.button === 0) {
+        if (e.button === 0 && !e.target.isContentEditable) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.set_timeout(e);
           this.set_offset(e);
           this.start(e.clientX - this.x, e.clientY - this.y, e);
         }
       } else if (e.type === "touchstart") {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.touches.length > 0) {
+        if (e.touches.length > 0 && !e.target.isContentEditable) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.set_timeout(e);
           this.set_offset(e);
           this.start(e.touches[0].clientX - this.x,
               e.touches[0].clientY - this.y, e);
         }
       } else if (e.type === "mousemove") {
+        this.clear_timeout();
         this.move(e.clientX - this.x, e.clientY - this.y);
       } else if (e.type === "touchmove" && e.touches.length > 0) {
+        this.clear_timeout();
         this.move(e.touches[0].clientX - this.x, e.touches[0].clientY - this.y);
       } else if (e.type === "mouseup" || e.type == "touchend") {
         this.stop();
+      }
+    },
+
+    set_timeout: function (e) {
+      var args = { currentTarget: e.currentTarget, target: e.target };
+      flexo.notify(args.currentTarget, "drag", args);
+      var timeout = this.timeout(e);
+      if (timeout >= 0) {
+        this.__timeout = window.setTimeout(function () {
+          delete this.__timeout;
+          this.stop();
+          flexo.notify(args.currentTarget, "undrag", args);
+        }.bind(this), timeout);
+      }
+    },
+
+    clear_timeout: function () {
+      if (this.__timeout) {
+        window.clearTimeout(this.__timeout);
+        delete this.__timeout;
       }
     },
 
@@ -83,6 +116,7 @@
     move: function (x, y) {
       if (this.elem) {
         ui.translate(this.elem, x - this.elem.__x, y - this.elem.__y);
+        return true;
       }
     },
 
@@ -94,6 +128,7 @@
         delete this.y;
         this.elem.classList.remove("drag");
         delete this.elem;
+        return true;
       }
     }
   };
@@ -113,5 +148,29 @@
     drag.elements.push(element);
     return element;
   };
+
+  ui.undraggable = function (element, drag) {
+    if (typeof drag === "undefined") {
+      drag = ui.drag;
+    }
+    element.removeEventListener("mousedown", drag, false);
+    element.removeEventListener("touchstart", drag, false);
+    element.removeEventListener("touchmove", drag, false);
+    element.removeEventListener("touchend", drag, false);
+    flexo.remove_from_array(drag.elements, element);
+    if (drag.elements.length === 0) {
+      document.removeEventListener("mouseup", drag, false);
+      document.removeEventListener("mousemove", drag, false);
+    }
+    return element;
+  };
+
+  (function () {
+    ui.l = {};
+    Array.prototype.forEach.call(document.querySelectorAll("[data-key]"),
+      function (elem) {
+        ui.l[elem.dataset.key] = elem.textContent;
+      });
+  }());
 
 }());
