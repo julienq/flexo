@@ -946,8 +946,8 @@
   function resolved_promise(promise) {
     var resolution = promise.hasOwnProperty("value") ? "value" : "reason";
     var on = promise.hasOwnProperty("value") ? 1 : 2;
-    var r = function (p, q) {
-      p.then(function (value) {
+    var r = function (then, p, q) {
+      then.call(p, function (value) {
         q.fulfill(value);
       }, function (reason) {
         q.reject(reason);
@@ -959,8 +959,16 @@
         try {
           var f = p[on];
           var v = f(promise[resolution]);
-          if (v && typeof v.then === "function") {
-            r(v, p[0]);
+          if (typeof v === "object" || typeof v === "function") {
+            var then = v.then;
+            if (typeof then === "function") {
+              if (v === p[0]) {
+                throw new TypeError();
+              }
+              r(then, v, p[0]);
+            } else {
+              p[0].fulfill(v);
+            }
           } else {
             p[0].fulfill(v);
           }
@@ -968,8 +976,8 @@
           p[0].reject(e);
         }
       } else {
-        var f = p[0][resolution === "value" ? "fulfill" : "reject"];
-        f(promise[resolution]);
+        p[0][resolution === "value" ? "fulfill" : "reject"]
+          (promise[resolution]);
       }
     }
     promise.queue = [];
