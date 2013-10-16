@@ -881,11 +881,14 @@
     return [this, arguments];
   };
 
+
+  var __k = 0;
+
   // Promises (see http://promisesaplus.com/)
   flexo.Promise = function () {
-    this._queue = [];
-    this._resolved = resolved_promise.bind(this);
-    Object.defineProperty(this, "resolved", { enumerable: true,
+    Object.defineProperty(this, "index", { value: __k++, enumerable: true });
+    Object.defineProperty(this, "queue", { value: [], writable: true });
+    Object.defineProperty(this, "resolved", {
       get: function () {
         return this.hasOwnProperty("value") || this.hasOwnProperty("reason");
       }
@@ -895,22 +898,24 @@
   flexo.Promise.prototype = {
     then: function (on_fulfilled, on_rejected) {
       var p = new flexo.Promise();
-      this._queue.push([p, on_fulfilled, on_rejected]);
-      if (this.hasOwnProperty("value") || this.hasOwnProperty("reason")) {
-        flexo.asap(this._resolved);
+      this.queue.push([p, on_fulfilled, on_rejected]);
+      if (this.resolved) {
+        var self = this;
+        flexo.asap(function () {
+          resolved_promise(self);
+        });
       }
       return p;
     },
 
     timeout: function (dur_ms) {
-      if (this._timeout) {
-        global_.clearTimeout(this._timeout);
-        delete this._timeout;
+      if (this.__timeout) {
+        global_.clearTimeout(this.__timeout);
+        delete this.__timeout;
       }
-      if (typeof dur_ms === "number" && dur_ms > 0) {
-        this._timeout = global_.setTimeout(function () {
-          this.reject("Timeout");
-        }.bind(this), dur_ms);
+      if (dur_ms > 0) {
+        this.__timeout = global_.setTimeout(this.reject.bind(this, "Timeout"),
+            dur_ms);
       }
       return this;
     },
@@ -925,21 +930,22 @@
   };
 
   function resolve_promise(promise, resolution, value) {
-    if (!promise.hasOwnProperty("value") && !promise.hasOwnProperty("reason")) {
-      if (promise._timeout) {
-        global_.clearTimeout(promise._timeout);
-        delete promise._timeout;
+    if (!promise.resolved) {
+      if (promise.__timeout) {
+        global_.clearTimeout(promise.__timeout);
+        delete promise.__timeout;
       }
-      promise[resolution] = value;
-      promise._resolved();
+      Object.defineProperty(promise, resolution, { value: value });
+      flexo.asap(function () {
+        resolved_promise(promise);
+      });
     }
     return promise;
   }
 
-  function resolved_promise() {
-    // jshint validthis:true
-    var resolution = this.hasOwnProperty("value") ? "value" : "reason";
-    var on = this.hasOwnProperty("value") ? 1 : 2;
+  function resolved_promise(promise) {
+    var resolution = promise.hasOwnProperty("value") ? "value" : "reason";
+    var on = promise.hasOwnProperty("value") ? 1 : 2;
     var r = function (p, q) {
       p.then(function (value) {
         q.fulfill(value);
@@ -947,11 +953,12 @@
         q.reject(reason);
       });
     };
-    for (var i = 0; i < this._queue.length; ++i) {
-      var p = this._queue[i];
+    for (var i = 0; i < promise.queue.length; ++i) {
+      var p = promise.queue[i];
       if (typeof p[on] === "function") {
         try {
-          var v = p[on](this[resolution]);
+          var f = p[on];
+          var v = f(promise[resolution]);
           if (v && typeof v.then === "function") {
             r(v, p[0]);
           } else {
@@ -961,10 +968,11 @@
           p[0].reject(e);
         }
       } else {
-        p[0][resolution === "value" ? "fulfill" : "reject"](this[resolution]);
+        var f = p[0][resolution === "value" ? "fulfill" : "reject"];
+        f(promise[resolution]);
       }
     }
-    this._queue = [];
+    promise.queue = [];
   }
 
   flexo.then = function (v, f) {
