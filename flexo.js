@@ -882,11 +882,8 @@
   };
 
 
-  var __k = 0;
-
   // Promises (see http://promisesaplus.com/)
   flexo.Promise = function () {
-    Object.defineProperty(this, "index", { value: __k++, enumerable: true });
     Object.defineProperty(this, "queue", { value: [], writable: true });
     Object.defineProperty(this, "resolved", {
       get: function () {
