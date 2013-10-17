@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Thu 17 Oct 2013: portraits loading</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <link rel="stylesheet" href="portraits.css">
+    <script src="../flexo-0.3.0.js"></script>
+  </head>
+  <body>
+    <div id="loading">
+      LOADING
+    </div>
+    <div id="error" class="hidden">
+      ERROR
+    </div>
+    <ul id="gallery"></ul>
+    <p>This <a href="http://romulusetrem.us/flexo/">Flexo</a> sample shows how
+    to load and display images in parallel or in sequence using promises. The
+    art is by <a href="http://jonathanlarabie.net/">Jonathan Larabie</a> and
+      <a href="http://romulusetrem.us/">romulusetrem.us</a>.</p>
+    <p id="seq">Here, the images are displayed in sequence, so that the first
+    image is always displayed first, even if the other images have finished
+    loading before it. Compare with <a href="?seq=false">displaying the images
+      in parallel</a>.</p>
+    <p id="par">Here, the images are displayed in parallel, so that an image is
+    displayed as soon as it is loaded, regardless of load order. Compare with
+    <a href="?seq=true">displaying the images in sequence</a>.</p>
+    <script>
+"use strict";
+
+var URL = "https://dl.dropboxusercontent.com/u/7465599/romulusetrem.us/media/images/randomhead/portraits/%0.png";
+
+var args = flexo.get_args({ n: 46, m: 10, seq: true });
+flexo.safe_remove(document.getElementById(args.seq ? "par" : "seq"));
+
+var urn = new flexo.Urn;
+for (var i = 0; i < args.n; ++i) {
+  urn.add(i + 1);
+}
+var picks = urn.picks(args.m);
+
+var li = [];
+var ul = document.getElementById("gallery");
+for (var i = 0; i < args.m; ++i) {
+  li.push(ul.appendChild(flexo.$li()));
+}
+
+function done() {
+  document.getElementById("loading").classList.add("hidden");
+}
+
+function error(e) {
+  done();
+  document.getElementById("error").classList.remove("hidden");
+  alert("Error loading image");
+}
+
+// In parallel
+
+if (args.seq) {
+  flexo.fold_promises(picks.map(function (n) {
+    return flexo.promise_img(URL.fmt(flexo.pad(n, 2)));
+  }), function (i, image) {
+    li[i].appendChild(image);
+    return i + 1;
+  }, 0).then(done, error);
+} else {
+  flexo.collect_promises(picks.map(function (n, i) {
+    return flexo.promise_img(URL.fmt(flexo.pad(n, 2))).then(function (image) {
+      return li[i].appendChild(image);
+    });
+  })).then(done, error);
+}
+
+    </script>
+  </body>
+</html>
