@@ -883,114 +883,173 @@
 
 
   // Promises (see http://promisesaplus.com/)
-  flexo.Promise = function () {
+  var promise = (flexo.Promise = function (id) {
+    this.pending = true;
     Object.defineProperty(this, "queue", { value: [], writable: true });
-    Object.defineProperty(this, "resolved", {
-      get: function () {
-        return this.hasOwnProperty("value") || this.hasOwnProperty("reason");
-      }
+  }).prototype;
+
+  promise.fulfill = function (value) {
+    if (!this.pending && arguments.length === 1) {
+      return this;
+    }
+    if (arguments.length === 1) {
+      delete this.pending;
+      Object.defineProperty(this, "value", { value: value, enumerable: true });
+    }
+    var queue = this.queue;
+    this.queue = [];
+    var promise1 = this;
+    flexo.asap(function () {
+      queue.forEach(function (q) {
+        promise.fulfill_.apply(promise1, q);
+      });
     });
+    return this;
   };
 
-  flexo.Promise.prototype = {
-    then: function (on_fulfilled, on_rejected) {
-      var p = new flexo.Promise();
-      this.queue.push([p, on_fulfilled, on_rejected]);
-      if (this.resolved) {
-        var self = this;
+  promise.fulfill_ = function (promise2, onFulfilled, onRejected) {
+    if (typeof onFulfilled === "function") {
+      try {
+        resolve_promise(promise2, onFulfilled(this.value));
+      } catch (e) {
+        promise2.reject(e);
+      }
+    } else {
+      promise2.fulfill(this.value);
+    }
+  };
+
+  promise.reject = function (reason) {
+    if (!this.pending && arguments.length === 1) {
+      return this;
+    }
+    if (arguments.length === 1) {
+      delete this.pending;
+      Object.defineProperty(this, "reason",
+          { value: reason, enumerable: true });
+    }
+    var queue = this.queue;
+    this.queue = [];
+    var promise1 = this;
+    flexo.asap(function () {
+      queue.forEach(function (q) {
+        promise.reject_.apply(promise1, q);
+      });
+    });
+    return this;
+  };
+
+  promise.reject_ = function (promise2, onFulfilled, onRejected) {
+    if (typeof onRejected === "function") {
+      try {
+        resolve_promise(promise2, onRejected(this.reason));
+      } catch (e) {
+        promise2.reject(e);
+      }
+    } else {
+      promise2.reject(this.reason);
+    }
+  }
+
+  promise.then = function (onFulfilled, onRejected) {
+    var promise2 = new flexo.Promise();
+    if (this.pending) {
+      this.queue.push([promise2, onFulfilled, onRejected]);
+    } else {
+      var promise1 = this;
+      if (this.hasOwnProperty("value")) {
         flexo.asap(function () {
-          resolved_promise(self);
+          promise1.fulfill_(promise2, onFulfilled, onRejected);
+        });
+      } else {
+        flexo.asap(function () {
+          promise1.reject_(promise2, onFulfilled, onRejected);
         });
       }
-      return p;
-    },
-
-    timeout: function (dur_ms) {
-      if (this.__timeout) {
-        global_.clearTimeout(this.__timeout);
-        delete this.__timeout;
-      }
-      if (dur_ms > 0) {
-        this.__timeout = global_.setTimeout(this.reject.bind(this, "Timeout"),
-            dur_ms);
-      }
-      return this;
-    },
-
-    fulfill: function (value) {
-      return resolve_promise(this, "value", value);
-    },
-
-    reject: function (reason) {
-      return resolve_promise(this, "reason", reason);
     }
+    return promise2;
   };
 
-  function resolve_promise(promise, resolution, value) {
-    if (!promise.resolved) {
-      if (promise.__timeout) {
-        global_.clearTimeout(promise.__timeout);
-        delete promise.__timeout;
-      }
-      Object.defineProperty(promise, resolution, { value: value });
-      flexo.asap(function () {
-        resolved_promise(promise);
-      });
+  function resolve_promise(promise, x) {
+    if (promise === x) {
+      throw new TypeError();
     }
-    return promise;
-  }
-
-  function resolved_promise(promise) {
-    var resolution = promise.hasOwnProperty("value") ? "value" : "reason";
-    var on = promise.hasOwnProperty("value") ? 1 : 2;
-    var r = function (then, p, q) {
-      then.call(p, function (value) {
-        q.fulfill(value);
-      }, function (reason) {
-        q.reject(reason);
-      });
-    };
-    for (var i = 0; i < promise.queue.length; ++i) {
-      var p = promise.queue[i];
-      if (typeof p[on] === "function") {
-        try {
-          var f = p[on];
-          var v = f(promise[resolution]);
-          if (typeof v === "object" || typeof v === "function") {
-            var then = v.then;
-            if (typeof then === "function") {
-              if (v === p[0]) {
-                throw new TypeError();
-              }
-              r(then, v, p[0]);
-            } else {
-              p[0].fulfill(v);
-            }
-          } else {
-            p[0].fulfill(v);
-          }
-        } catch (e) {
-          p[0].reject(e);
-        }
+    if (x instanceof flexo.Promise) {
+      if (x.pending) {
+        x.queue.push([promise, function (value) {
+          return promise.fulfill(value);
+        }, function (reason) {
+          return promise.reject(reason);
+        }]);
+      } else if (x.hasOwnProperty("value")) {
+        promise.fulfill(x.value);
       } else {
-        p[0][resolution === "value" ? "fulfill" : "reject"]
-          (promise[resolution]);
+        promise.reject(x.reason);
       }
+    } else if (x !== null && typeof x === "object" || typeof x === "function") {
+      try {
+        var then = x.then;
+        if (typeof then === "function") {
+          (function () {
+            var handled = false;
+            try {
+              then.call(x, function (y) {
+                if (!handled) {
+                  handled = true;
+                  resolve_promise(promise, y);
+                }
+              }, function (r) {
+                if (!handled) {
+                  handled = true;
+                  promise.reject(r);
+                }
+              });
+            } catch (e) {
+              if (!handled) {
+                handled = true;
+                promise.reject(e);
+              }
+            }
+          }());
+        } else {
+          promise.fulfill(x);
+        }
+      } catch (e) {
+        promise.reject(e);
+      }
+    } else {
+      promise.fulfill(x);
     }
-    promise.queue = [];
   }
 
-  flexo.then = function (v, f) {
-    if (v && typeof v.then === "function") {
-      return v.then(f);
+  promise.timeout = function (dur_ms) {
+    if (this.__timeout) {
+      global_.clearTimeout(this.__timeout);
+      delete this.__timeout;
     }
-    return f(v);
+    if (dur_ms > 0) {
+      this.__timeout = global_.setTimeout(this.reject.bind(this, "Timeout"),
+          dur_ms);
+    }
+    return this;
   };
 
-  flexo.while_p = function (p, f) {
-    while (p()) {
-      f();
-    }
+  // Collect a list of promises into a promise of a list
+  flexo.collect_promises = function (promises) {
+    var collect = function (i, n, values) {
+      if (i === n) {
+        return new flexo.Promise().fulfill(values);
+      }
+      if (promises[i] instanceof flexo.Promise) {
+        return promises[i].then(function (value) {
+          values.push(value);
+          return collect(i + 1, n, values);
+        });
+      }
+      values.push(promises[i]);
+      return collect(i + 1, n, values);
+    };
+    return collect(0, promises.length, []);
   };
 
   // Delay the execution of `f` by `delay_ms` millisecond (or 0 if the delay is
@@ -1038,92 +1097,6 @@
     return promise;
   };
 
-  // Apply function f (defaults to id) to all elements of array xs. Return a
-  // promise that gets fulfilled with the last value (or the provided z value)
-  // once all elements have finished.
-  flexo.promise_each = function (xs, f, that, z) {
-    var promise = new flexo.Promise();
-    if (typeof f !== "function") {
-      f = flexo.id;
-    }
-    var pending = 0;
-    var last;
-    foreach.call(xs, function (x, i) {
-      var y = f.call(that, x, i, xs);
-      last = y;
-      if (y && typeof y.then === "function") {
-        ++pending;
-        y.then(function (y_) {
-          if (i === xs.length - 1) {
-            last = y_;
-          }
-          if (--pending === 0) {
-            promise.fulfill(arguments.length > 3 ? z : last);
-          }
-        }, promise.reject.bind(promise));
-      }
-    });
-    if (pending === 0) {
-      promise.fulfill(arguments.length > 3 ? z : last);
-    }
-    return promise;
-  };
-
-  flexo.promise_map = function (xs, f, that, tolerant) {
-    if (arguments.length < 4 && typeof that === "boolean") {
-      tolerant = that;
-      that = undefined;
-    }
-    var promise = new flexo.Promise();
-    var ys = new Array(xs.length);
-    var pending = 1;
-    var check_pending = function () {
-      if (--pending === 0) {
-        promise.fulfill(ys);
-      }
-    };
-    foreach.call(xs, function (x, i) {
-      var y = f.call(that, x, i, xs);
-      if (y && typeof y.then === "function") {
-        ++pending;
-        y.then(function (y_) {
-          ys[i] = y_;
-          check_pending();
-        }, function (y_) {
-          if (tolerant) {
-            ys[i] = y_;
-            check_pending();
-          } else {
-            promise.reject(y_);
-          }
-        });
-      } else {
-        ys[i] = y;
-      }
-    });
-    check_pending();
-    return promise;
-  };
-
-  flexo.promise_fold = function (xs, f, z, that) {
-    var promise = new flexo.Promise();
-    var g = function (z, i) {
-      if (i === xs.length) {
-        promise.fulfill(z);
-      } else {
-        var y = f.call(that, z, xs[i], i, xs);
-        if (y && typeof y.then === "function") {
-          y.then(function (y_) {
-            g(y_, i + 1);
-          });
-        } else {
-          g(y, i + 1);
-        }
-      }
-    };
-    g(z, 0);
-    return promise;
-  };
 
   // DOM
 

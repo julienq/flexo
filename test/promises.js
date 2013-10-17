@@ -2,145 +2,33 @@
 
 var flexo = require("../flexo.js");
 
-
-// Promises (see http://promisesaplus.com/)
-var promise = (flexo.Promise_ = function () {
-  this.pending = true;
-  Object.defineProperty(this, "queue", { value: [], writable: true });
-}).prototype;
-
-promise.fulfill = function (value) {
-  if (!this.pending && arguments.length === 1) {
-    return;
-  }
-  if (arguments.length === 1) {
-    delete this.pending;
-    Object.defineProperty(this, "value", { value: value, enumerable: true });
-  }
-  var queue = this.queue;
-  this.queue = [];
-  var promise1 = this;
-  flexo.asap(function () {
-    queue.forEach(function (q) {
-      promise.fulfill_.apply(promise1, q);
-    });
-  });
-};
-
-promise.fulfill_ = function (promise2, onFulfilled, onRejected) {
-  if (typeof onFulfilled === "function") {
-    try {
-      resolve(promise2, onFulfilled(this.value));
-    } catch (e) {
-      promise2.reject(e);
-    }
-  } else {
-    promise2.fulfill(this.value);
-  }
-}
-
-promise.reject = function (reason) {
-  if (!this.pending && arguments.length === 1) {
-    return;
-  }
-  if (arguments.length === 1) {
-    delete this.pending;
-    Object.defineProperty(this, "reason", { value: reason, enumerable: true });
-  }
-  var queue = this.queue;
-  this.queue = [];
-  var promise1 = this;
-  flexo.asap(function () {
-    queue.forEach(function (q) {
-      promise.reject_.apply(promise1, q);
-    });
-  });
-};
-
-promise.reject_ = function (promise2, onFulfilled, onRejected) {
-  if (typeof onRejected === "function") {
-    try {
-      resolve(promise2, onRejected(this.reason));
-    } catch (e) {
-      promise2.reject(e);
-    }
-  } else {
-    promise2.reject(this.reason);
-  }
-}
-
-promise.then = function (onFulfilled, onRejected) {
-  var promise2 = new flexo.Promise_();
-  if (this.pending) {
-    this.queue.push([promise2, onFulfilled, onRejected]);
-  } else {
-    var promise1 = this;
-    if (this.hasOwnProperty("value")) {
-      flexo.asap(function () {
-        promise1.fulfill_(promise2, onFulfilled, onRejected);
-      });
-    } else {
-      flexo.asap(function () {
-        promise1.reject_(promise2, onFulfilled, onRejected);
-      });
-    }
-  }
-  return promise2;
-};
-
-function resolve(promise, x) {
-  if (promise === x) {
-    throw new TypeError();
-  }
-  if (x instanceof flexo.Promise_) {
-    if (x.pending) {
-      x.queue.push([promise, function (value) {
-        return promise.fulfill(value);
-      }, function (reason) {
-        return promise.reject(reason);
-      }]);
-    } else if (x.hasOwnProperty("value")) {
-      promise.fulfill(x.value);
-    } else {
-      promise.reject(x.reason);
-    }
-  } else if (x !== null && typeof x === "object" || typeof x === "function") {
-    try {
-      var then = x.then;
-      if (typeof then === "function") {
-        (function () {
-          var handled = false;
-          try {
-            then.call(x, function (y) {
-              if (!handled) {
-                handled = true;
-                resolve(promise, y);
-              }
-            }, function (r) {
-              if (!handled) {
-                handled = true;
-                promise.reject(r);
-              }
-            });
-          } catch (e) {
-            if (!handled) {
-              handled = true;
-              promise.reject(e);
-            }
-          }
-        }());
-      } else {
-        promise.fulfill(x);
-      }
-    } catch (e) {
-      promise.reject(e);
-    }
-  } else {
-    promise.fulfill(x);
-  }
-}
-
-
+/*
+var p = new flexo.Promise("p");
+var q = new flexo.Promise("q");
+var r = new flexo.Promise("r");
+var s = new flexo.Promise("s");
+var c = flexo.collect_promises([1, p, 2.5, q, 4]);
+c.then(function (a) {
+  console.log("C = ", a);
+});
+var d = flexo.collect_promises(["foo", r, c, "bar", s]);
+d.then(function (a) {
+  console.log("D = ", a);
+}).then(undefined, function (r) {
+  console.log("D error:", r);
+});
+setTimeout(function () { console.log("p = 2"); p.fulfill(2); },
+    1000 * Math.random());
+setTimeout(function () { if (!q.pending) return; console.log("q fails!!!"); q.reject("AUGH"); },
+    1500 * Math.random());
+setTimeout(function () { if (!q.pending) return; console.log("q = 3"); q.fulfill(3); },
+    1000 * Math.random());
+setTimeout(function () { console.log("r = fum"); r.fulfill("fum"); },
+    1000 * Math.random());
+setTimeout(function () { console.log("s = baz"); s.fulfill("baz"); },
+    1000 * Math.random());
+q.timeout(1500 * Math.random());
+*/
 
 describe("Promises/A+ Tests", function () {
   require("promises-aplus-tests").mocha({

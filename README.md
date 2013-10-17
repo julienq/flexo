@@ -13,11 +13,8 @@ to get an idea of what you can do.
 
 ## Samples
 
-* An [SVG clock](http://www.romulusetrem.us/flexo/sketchbook/20131010/)
-* [Random gradients](http://www.romulusetrem.us/flexo/samples/gradients.svg)
-* Random portraits, loading the images using promises either [in parallel](http://www.romulusetrem.us/flexo/samples/portraits.html) or [in sequence](http://www.romulusetrem.us/flexo/samples/portraits.html?par=false).
-
-See also the [Flexo sketchbook](http://romulusetrem.us/flexo/sketchbook) for more.
+See the [Flexo sketchbook](http://romulusetrem.us/flexo/sketchbook) for some
+examples ([source](https://github.com/julienq/flexo/tree/master/sketchbook).)
 
 ## TODO
 
@@ -32,7 +29,10 @@ See also the [Flexo sketchbook](http://romulusetrem.us/flexo/sketchbook) for mor
 
 * **split_text_node**;
 * **find_ancestor_or_self**;
-* **TODO** Update promises to spec version 1.1.
+* updated promises to spec version 1.1; still failing [tests in section
+  2.3.3.3.1](https://github.com/promises-aplus/promises-tests). Deprecated
+  **promise_each**, **promise_map** and **promise_fold** in favor of
+  **collect_promises** at the moment.
 
 ### New in v0.2.3
 
