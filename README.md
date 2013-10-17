@@ -32,7 +32,7 @@ examples ([source](https://github.com/julienq/flexo/tree/master/sketchbook).)
 * updated promises to spec version 1.1; still failing [tests in section
   2.3.3.3.1](https://github.com/promises-aplus/promises-tests). Deprecated
   **promise_each**, **promise_map** and **promise_fold** in favor of
-  **collect_promises** at the moment.
+  **fold_promises** and **collect_promises**.
 
 ### New in v0.2.3
 
