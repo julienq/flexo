@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Fri 18 Oct 2013: SVG kanji animation</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <style>
+.paused, .loading, .error {
+  position: absolute;
+  right: 0;
+  color: white;
+  background-color: #ff4040;
+  padding: 0.2em;
+}
+p {
+  margin: 2em;
+}
+p.copyright {
+  position: absolute;
+  font-size: small;
+  text-align: center;
+  color: #888;
+  bottom: 0;
+}
+.choice a {
+  margin: 0 0.5rem;
+}
+    </style>
+    <script src="../flexo-0.3.0.js"></script>
+  </head>
+  <body class="full">
+    <div class="paused hidden">PAUSED</div>
+    <div class="loading hidden">LOADING</div>
+    <div class="error hidden">ERROR</div>
+    <svg class="full" width="100%" height="100%" stroke="black" fill="none"
+      stroke-width="3" stroke-linejoin="round" stroke-linecap="round"
+      viewBox="0 0 109 109">
+      <g stroke="#ddd" id="silhouette"></g>
+      <g id="strokes"></g>
+      <rect id="mask" width="100%" height="100%" fill="black" stroke="none"
+        fill-opacity="0"/>
+    </svg>
+    <p class="copyright"><a href="http://kanjivg.tagaini.net/">Kanji data</a>
+    © 2009-2013 Ulrich Apel</p>
+    <script src="kanji.js"></script>
+  </body>
+</html>
