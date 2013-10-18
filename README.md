@@ -31,7 +31,7 @@ examples ([source](https://github.com/julienq/flexo/tree/master/sketchbook).)
 * **find_ancestor_or_self**;
 * updated promises to spec version 1.1; still failing [tests in section
   2.3.3.3.1](https://github.com/promises-aplus/promises-tests). Deprecated
-  **promise_each**, **promise_map** and **promise_fold** in favor of
+  **promise_each**, **promise_map**, **promise_fold**, and **then** in favor of
   **fold_promises** and **collect_promises**.
 
 ### New in v0.2.3
