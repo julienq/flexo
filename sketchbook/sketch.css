@@ -6,7 +6,14 @@ html {
 }
 
 body {
-  font: 1.2rem/1.2 FreeUniversal, "Helvetica Neue", Helvetica, sans-serif;
+  font: 1.2rem/1.2 "Avenir Next", FreeUniversal, "Helvetica Neue", Helvetica,
+    sans-serif;
+  margin: 2em;
+}
+
+h1 {
+  font-weight: normal;
+  text-align: center;
 }
 
 body.full {
@@ -17,7 +24,6 @@ body.full {
 a {
   text-decoration: none;
   color: #333;
-  font-weight: bold;
 }
 
 svg.full {
@@ -26,8 +32,36 @@ svg.full {
   margin: 0;
 }
 
-.done {
-  background-color: #0f8;
+.calendar {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.calendar td, .calendar th {
+  vertical-align: top;
+  border-bottom: solid thin #888;
+  padding-bottom: 0.5em;
+}
+
+.calendar th {
+  text-align: left;
+  font-weight: normal;
+}
+
+.calendar tbody td {
+  height: 4em;
+}
+
+.calendar a, .done {
+  background-color: yellow;
   padding: 0 0.25em;
   margin: 0 -0.25em;
+}
+
+.done {
+  background-color: #0f8 !important;
+}
+
+.hidden {
+  display: none;
 }

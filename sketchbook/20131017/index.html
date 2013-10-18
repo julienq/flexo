@@ -19,60 +19,27 @@
     to load and display images in parallel or in sequence using promises. The
     art is by <a href="http://jonathanlarabie.net/">Jonathan Larabie</a> and
       <a href="http://romulusetrem.us/">romulusetrem.us</a>.</p>
-    <p id="seq">Here, the images are displayed in sequence, so that the first
-    image is always displayed first, even if the other images have finished
-    loading before it. Compare with <a href="?seq=false">displaying the images
-      in parallel</a>.</p>
-    <p id="par">Here, the images are displayed in parallel, so that an image is
-    displayed as soon as it is loaded, regardless of load order. Compare with
-    <a href="?seq=true">displaying the images in sequence</a>.</p>
-    <script>
-"use strict";
-
-var URL = "https://dl.dropboxusercontent.com/u/7465599/romulusetrem.us/media/images/randomhead/portraits/%0.png";
-
-var args = flexo.get_args({ n: 46, m: 10, seq: true });
-flexo.safe_remove(document.getElementById(args.seq ? "par" : "seq"));
-
-var urn = new flexo.Urn;
-for (var i = 0; i < args.n; ++i) {
-  urn.add(i + 1);
-}
-var picks = urn.picks(args.m);
-
-var li = [];
-var ul = document.getElementById("gallery");
-for (var i = 0; i < args.m; ++i) {
-  li.push(ul.appendChild(flexo.$li()));
-}
-
-function done() {
-  document.getElementById("loading").classList.add("hidden");
-}
-
-function error(e) {
-  done();
-  document.getElementById("error").classList.remove("hidden");
-  alert("Error loading image");
-}
-
-// In parallel
-
-if (args.seq) {
-  flexo.fold_promises(picks.map(function (n) {
-    return flexo.promise_img(URL.fmt(flexo.pad(n, 2)));
-  }), function (i, image) {
-    li[i].appendChild(image);
-    return i + 1;
-  }, 0).then(done, error);
-} else {
-  flexo.collect_promises(picks.map(function (n, i) {
-    return flexo.promise_img(URL.fmt(flexo.pad(n, 2))).then(function (image) {
-      return li[i].appendChild(image);
-    });
-  })).then(done, error);
-}
-
-    </script>
+    <p>Images are loaded using the <code>flexo.promise_img()</code> function
+    that creates a new image element and returns a promise that is fulfilled
+    once the image as loaded (or gets rejected if an error occurs.) A different
+    promise is created for every image.
+    <span id="par">Here, the images are displayed in the order in which they
+      are loaded. This is achieved with <code>flexo.collect_promises()</code>,
+      which transforms a list of promises into a promise of a list, which is
+      fulfilled once every promise in the list has been fulfilled, regardless of
+      order. Every image is displayed as soon as its related promise is
+      fulfilled, then when the whole collection is fulfilled, the “loading” sign
+      can be removed. Compare with <a href="?seq=true">displaying the images in
+        sequence.</a></span>
+    <span id="seq">Here, the images are displayed in document order, even though
+      they may load in a different order. (This is why several images may appear
+      at once: the second image is not shown before the first can be shown, but
+      if it was loaded before the first, it can then be shown immediately after
+      the first one finished loading.) This is achieved with
+      <code>flexo.fold_promises()</code> which is a catamorphism transforming a
+      list of promises into a single promise. Compare with <a
+        href="?seq=false">displaying the images in parallel.</a></span>
+    </p>
+    <script src="portraits.js"></script>
   </body>
 </html>
