@@ -1,0 +1,21 @@
+body {
+  background-color: black;
+  color: white;
+  font-family: Futura;
+}
+
+a {
+  color: #88f;
+  text-decoration: none;
+}
+
+canvas {
+  position: absolute;
+  margin: 0;
+  -moz-transform-origin: bottom center;
+  -webkit-transform-origin: bottom center;
+}
+
+video {
+  display: none;
+}

@@ -1,0 +1,23 @@
+body {
+  margin: 4em auto;
+  font-family: Baskerville, Georgia, serif;
+  font-size: larger;
+  max-width: 48em;
+}
+
+a {
+  color: #ff4040;
+  text-decoration: none;
+}
+ 
+h1, h2, h3 {
+  text-align: center;
+}
+
+.note {
+  font-size: smaller;
+}
+
+.stagedir {
+  background-color: yellow;
+}
