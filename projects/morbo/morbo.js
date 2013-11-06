@@ -8,9 +8,13 @@ var flexo = require("../../flexo.js");
 
 exports.CONTENT_TYPES = {
   "": "text/plain",
-  ".html": "text/html",
-  ".js": "application/javascript",
-  ".xml": "application/xml"
+  css: "text/css",
+  html: "text/html",
+  jpg: "image/jpeg",
+  js: "application/javascript",
+  png: "image/png",
+  svg: "image/svg+xml",
+  xml: "application/xml"
 };
 
 // Turn a Node async function expecting a callback of the form f(error, value)
@@ -35,7 +39,7 @@ function promisify(f) {
 
 
 exports.content_type = function (filename) {
-  return exports.CONTENT_TYPES[path.extname(filename)] ||
+  return exports.CONTENT_TYPES[path.extname(filename).substr(1)] ||
     exports.CONTENT_TYPES[""];
 };
 
