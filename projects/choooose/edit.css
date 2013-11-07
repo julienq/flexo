@@ -1,0 +1,135 @@
+body {
+  background-color: #187757;
+  font-size: 1rem;
+}
+
+.underlay {
+  position: absolute;
+}
+
+.red {
+  background-color: #a61416;
+  color: #f8f9f0;
+}
+
+.orange {
+  background-color: #ff6a4d;
+  color: #f8f9f0;
+}
+
+.yellow {
+  background-color: #f8ca00;
+  color: #333;
+}
+
+.green {
+  background-color: #5eb26b;
+  color: #333;
+}
+
+.blue {
+  background-color: #4dbce9;
+  color: #333;
+}
+
+.indigo {
+  background-color: #0b486b;
+  color: #f8f9f0;
+}
+
+.violet {
+  background-color: #ad2bad;
+  color: #f8f9f0;
+}
+
+.brown {
+  background-color: #774f38;
+}
+
+.fuchsia {
+  background-colo:r #f94179;
+}
+
+.box {
+  background-color: #f8f9f0;
+  color: #333;
+  display: inline-block;
+  position: absolute;
+  cursor: default;
+  box-shadow: 0 0 4px #222;
+  max-width: 24rem;
+  min-width: 8rem;
+}
+
+.box.drag {
+  cursor: none;
+}
+
+.box > div:nth-child(1) {
+  padding: 0 .5rem;
+  background-color: #333;
+  color: #f8f9f0;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.box.selected > div:nth-child(1) {
+  background-color: #f94179;
+  font-style: italic;
+}
+
+.box > div:nth-child(2) {
+  padding: 0 .5rem;
+  min-height: 2rem;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.box > div:nth-child(3) {
+  background-color: #888;
+  font-size: 0.8rem;
+}
+
+.box > div:nth-child(3) > div {
+  display: inline-block;
+  padding: 0 .5rem;
+}
+
+.linkno {
+  padding: 0 .5rem;
+  margin-left: 0.5rem;
+  border-left: solid thin #f8f9f0;
+}
+
+.linkno > span {
+  font-size: 0.8rem;
+}
+
+.toolbar {
+  background-color: #333;
+  color: #f8f9f0;
+  font-size: 0;
+  padding-left: 0.5rem;
+  position: absolute;
+  width: 100%;
+  z-index: 2;
+}
+
+.toolbar > div {
+  font-size: 0.9rem;
+  display: inline-block;
+  padding: 0 0.5rem;
+  cursor: pointer;
+}
+
+.toolbar > div.down {
+  background-color: #f94179;
+}
+
+.toolbar > div.disabled {
+  color: #999;
+}
+
+.l10n {
+  display: none;
+}
