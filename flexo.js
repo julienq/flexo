@@ -6,13 +6,22 @@
   var global_ = browserp ? window : typeof global === "object" ? global :
     (function () { return this; }());
   var flexo = typeof exports === "object" ? exports : global_.flexo = {};
+  flexo.global = global_;
 
   flexo.VERSION = "0.3.0";
 
-  var foreach = Array.prototype.forEach;
-  var map = Array.prototype.map;
-  var slice = Array.prototype.slice;
-  var splice = Array.prototype.splice;
+  // Make free-standing versions of array functions to work on array-like
+  // objects.
+  global_.$call = Function.prototype.call;
+  global_.$apply = Function.prototype.apply;
+  global_.$bind = $call.bind(Function.prototype.bind);
+  "filter forEach map push slice splice unshift".split(" ")
+    .forEach(function (f) {
+      global_["$" + f.toLowerCase()] = $call.bind(Array.prototype[f]);
+    });
+  "push unshift".split(" ").forEach(function (f) {
+    global_["$$" + f.toLowerCase()] = $apply.bind(Array.prototype[f]);
+  });
 
   // Define π as a global
   global_.π = Math.PI;
@@ -68,9 +77,9 @@
   if (typeof Function.prototype.bind !== "function") {
     Function.prototype.bind = function (x) {
       var f = this;
-      var args = slice.call(arguments, 1);
+      var args = $slice(arguments, 1);
       return function () {
-        return f.apply(x, args.concat(slice.call(arguments)));
+        return f.apply(x, args.concat($slice(arguments)));
       };
     };
   }
@@ -135,7 +144,7 @@
     if (obj == null) {
       return "";
     }
-    return obj.toString.apply(obj, slice.call(arguments, 1));
+    return obj.toString.apply(obj, $slice(arguments, 1));
   };
 
 
@@ -171,6 +180,15 @@
     q = q || '"';
     return "%0%1%0".fmt(q, string.replace(new RegExp(q, "g"), "\\" + q)
         .replace(/\n/g, "\\n"));
+  };
+
+  // A quick-and-dirty random ID for n alphanumeric characters (default = 6)
+  flexo.random_id = function (n) {
+    // jshint -W018
+    if (!(n > 0)) {
+      n = 6;
+    }
+    return Math.random().toString(36).substr(2, n).toUpperCase();
   };
 
   // Trim a string, or return the empty string if the argument was not a string
@@ -274,11 +292,11 @@
 
   flexo.extract_from_array = function (array, p, that) {
     var extracted = [];
-    var original = slice.call(array);
+    var original = $slice(array);
     for (var i = array.length - 1; i >= 0; --i) {
       if (p.call(that, array[i], i, original)) {
         extracted.unshift(array[i]);
-        splice.call(array, i, 1);
+        $splice(array, i, 1);
       }
     }
     return extracted;
@@ -287,12 +305,16 @@
   // Drop elements of an array while the predicate is true
   flexo.drop_while = function (a, p, that) {
     for (var i = 0, n = a.length; i < n && p.call(that, a[i], i, a); ++i) {}
-    return slice.call(a, i);
+    return $slice(a, i);
   };
+
+  flexo.is_array_like = function (a) {
+    return Array.isArray(a) || (a && typeof a.length === "number");
+  }
 
   // Find the first item x in a such that p(x) is true
   flexo.find_first = function (a, p, that) {
-    if (!Array.isArray(a)) {
+    if (!flexo.is_array_like(a)) {
       return;
     }
     for (var i = 0, n = a.length; i < n && !p.call(that, a[i], i, a); ++i) {}
@@ -373,7 +395,7 @@
   // Shuffle the array into a new array (the original array is not changed and
   // the new, shuffled array is returned.)
   flexo.shuffle_array = function (array) {
-    var shuffled = slice.call(array);
+    var shuffled = $slice(array);
     for (var i = shuffled.length - 1; i > 0; --i) {
       var j = flexo.random_int(i);
       var x = shuffled[i];
@@ -403,7 +425,7 @@
     pick: function () {
       var last;
       if (this._remaining.length === 0) {
-        this._remaining = slice.call(this.items);
+        this._remaining = $slice(this.items);
         if (this._remaining.length > 1 && this.hasOwnProperty("_last_pick")) {
           last = flexo.remove_from_array(this._remaining, this._last_pick);
         }
@@ -447,6 +469,17 @@
       return removed;
     }
 
+  };
+
+  // Extend the proto object with properties of the ext object. Note that this
+  // creates a new object that proto should be replaced with.
+  flexo.replace_prototype = function (proto, ext) {
+    var object = Object.create(proto);
+    Object.getOwnPropertyNames(ext).forEach(function (key) {
+      Object.defineProperty(object, key,
+        Object.getOwnPropertyDescriptor(ext, key));
+    });
+    return object;
   };
 
   // Return all the values of an object (presumably used as a dictionary)
@@ -806,7 +839,8 @@
           var q = queue.slice();
           queue = [];
           for (var i = 0, n = q.length; i < n; ++i) {
-            q[i]();
+            var f = q[i];
+            f();
           }
         }
       }, false);
@@ -825,7 +859,7 @@
   // to keep at most n arguments (defaults to 0 of course.)
   flexo.discard = function (f, n) {
     return function () {
-      return f.apply(this, slice.call(arguments, 0, n || 0));
+      return f.apply(this, $slice(arguments, 0, n || 0));
     };
   };
 
@@ -846,9 +880,20 @@
     };
   };
 
-  // Identity function
-  flexo.id = function (x) {
+  // Identity function (also named `fst` to match `snd`)
+  flexo.id = flexo.fst = function (x) {
     return x;
+  };
+
+  // A function that returns its second argument and discard the first.
+  flexo.snd = function (_, y) {
+    // jshint unused: true
+    return y;
+  };
+
+  // Sort of like id, but for `this`.
+  flexo.self = function () {
+    return this;
   };
 
   // No-op function, returns nothing
@@ -883,7 +928,7 @@
 
 
   // Promises (see http://promisesaplus.com/)
-  var promise = (flexo.Promise = function (id) {
+  var promise = (flexo.Promise = function () {
     this.pending = true;
     Object.defineProperty(this, "queue", { value: [], writable: true });
   }).prototype;
@@ -949,7 +994,7 @@
     } else {
       promise2.reject(this.reason);
     }
-  }
+  };
 
   promise.then = function (onFulfilled, onRejected) {
     var promise2 = new flexo.Promise();
@@ -972,7 +1017,8 @@
 
   function resolve_promise(promise, x) {
     if (promise === x) {
-      throw new TypeError();
+      // throw new TypeError();
+      promise.reject(new TypeError());
     }
     if (x instanceof flexo.Promise) {
       if (x.pending) {
@@ -1117,7 +1163,7 @@
   // TODO handle encoding (at least of attribute values)
   flexo.html_tag = function (tag) {
     var out = "<" + tag;
-    var contents = slice.call(arguments, 1);
+    var contents = $slice(arguments, 1);
     if (typeof contents[0] === "object" && !Array.isArray(contents[0])) {
       var attrs = contents.shift();
       for (var a in attrs) {
@@ -1187,9 +1233,9 @@
     var contents;
     if (typeof attrs === "object" && !(attrs instanceof window.Node) &&
         !Array.isArray(attrs)) {
-      contents = slice.call(arguments, 2);
+      contents = $slice(arguments, 2);
     } else {
-      contents = slice.call(arguments, 1);
+      contents = $slice(arguments, 1);
       attrs = {};
     }
     var classes = name.trim().split(".").map(function (x) {
@@ -1297,7 +1343,7 @@
       // Shorthand to create a document fragment
       flexo.$$ = function () {
         var fragment = window.document.createDocumentFragment();
-        foreach.call(arguments, function (ch) {
+        $foreach(arguments, function (ch) {
           flexo.append_child(fragment, ch);
         });
         return fragment;
@@ -1344,7 +1390,7 @@
   flexo.find_ancestor_or_self = function (node, p) {
     for (; node && !p(node); node = node.parentNode) {}
     return node;
-  }
+  };
 
   // Remove all children of an element
   flexo.remove_children = function (elem) {
@@ -1422,10 +1468,9 @@
 
   // Convert an RGB color (3 values in the [0, 256[ interval) to a hex value
   flexo.rgb_to_hex = function () {
-    return "#" + map.call(arguments,
-      function (x) {
-        return flexo.pad(flexo.clamp(Math.floor(x), 0, 255).toString(16), 2);
-      }).join("");
+    return "#" + $map(arguments, function (x) {
+      return flexo.pad(flexo.clamp(Math.floor(x), 0, 255).toString(16), 2);
+    }).join("");
   };
 
   // Convert a number to a color hex string. Use only the lower 24 bits.
