@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Mon 2 Dec 2013: Drop-down menus</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="menus.css">
+    <script src="../../flexo.js"></script>
+  </head>
+  <body>
+    <div class="menubar">
+      <div class="menu" data-name="app">
+        Drop-down menus
+        <ul>
+          <li data-name="about">About Drop-down menus</li>
+          <li data-name="quit">Quit Drop-down menus</li>
+        </ul>
+      </div>
+      <div class="menu" data-name="test">
+        Test
+        <ul>
+          <li data-name="enable">Enable next</li>
+          <li data-name="disable" class="disabled">Disable this</li>
+        </ul>
+      </div>
+      <div class="menu disabled" data-name="nothing">
+        Nothing
+        <ul>
+          <li data-name="nothing">Nothing heret</li>
+        </ul>
+      </div>
+    </div>
+    <script src="menus.js"></script>
+  </body>
+</html>
