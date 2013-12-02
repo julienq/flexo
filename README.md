@@ -27,7 +27,14 @@ examples ([source](https://github.com/julienq/flexo/tree/master/sketchbook).)
 
 ### New in v0.3.0 (In progress)
 
+* New globals for Function prototype: **$call**, **$apply**, **$bind**;
+* New globals for Array prototype: **$filter**, **$forEach**, **$map**,
+  **$push**, **$slice**, **$splice**, **$unshift** (using *call*) and
+  **$$push** and **$$unshift** (using *apply*);
+* **random_id** for a quick-and-dirty random identifier string;
+* **replace_prototype**;
 * **split_text_node**;
+* **fst**, **snd**, and **self**;
 * **find_ancestor_or_self**;
 * updated promises to spec version 1.1; still failing [tests in section
   2.3.3.3.1](https://github.com/promises-aplus/promises-tests). Deprecated
