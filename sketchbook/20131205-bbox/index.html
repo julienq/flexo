@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Thu 5 Dec 2013: Bounding box drawing</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../ui.css">
+    <style>
+svg {
+  display: block;
+  background-color: white;
+  margin: 1rem;
+}
+    </style>
+    <script src="../../flexo.js"></script>
+    <script src="../ui.js"></script>
+  </head>
+  <body class="felt">
+    <div class="menubar">
+      <div class="menu" data-name="app">
+        BBox
+        <ul>
+          <li data-name="about">About Bbox</li>
+          <li data-name="quit">Quit Bbox</li>
+        </ul>
+      </div>
+      <div class="menu" data-name="shape">
+        Shape
+        <ul>
+          <li data-name="rect" class="disabled">Rectangle</li>
+          <li data-name="ellipse">Ellipse</li>
+        </ul>
+      </div>
+    </div>
+    <svg viewBox="0 0 512 342" width="512" height="342">
+      <g transform="translate(0.5, 0.5)" stroke="black" fill="none">
+        <rect x="100" y="120" width="200" height="140"></rect>
+        <ellipse/>
+      </g>
+    </svg>
+    <script src="bbox.js"></script>
+  </body>
+</html>

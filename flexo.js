@@ -1367,6 +1367,14 @@
     }
   }());
 
+  // Add node after ref, which of course must be defined.
+  flexo.add_after = function (node, ref) {
+    if (!ref || !ref.parentNode) {
+      return;
+    }
+    return ref.parentNode.insertBefore(node, ref.nextSibling);
+  };
+
   // Get clientX/clientY as an object { x: ..., y: ... } for events that may
   // be either a mouse event or a touch event, in which case the position of
   // the first touch is returned.
@@ -1484,19 +1492,25 @@
   // Get an SVG point for the event in the context of an SVG element (or the
   // closest svg element by default)
   flexo.event_svg_point = function(e, svg) {
-    if (!svg) {
-      svg = flexo.find_svg(e.target);
-    }
+    return flexo.svg_point(
+        e.targetTouches ? e.targetTouches[0].clientX : e.clientX,
+        e.targetTouches ? e.targetTouches[0].clientY : e.clientY,
+        svg
+    );
+  };
+
+  flexo.svg_point = function (x, y, svg) {
     if (!svg) {
       return;
     }
     var p = svg.createSVGPoint();
-    p.x = e.targetTouches ? e.targetTouches[0].clientX : e.clientX;
-    p.y = e.targetTouches ? e.targetTouches[0].clientY : e.clientY;
+    p.x = x;
+    p.y = y;
     try {
       return p.matrixTransform(svg.getScreenCTM().inverse());
     } catch(x) {}
-  };
+
+  }
 
   // Find the closest <svg> ancestor for a given element
   flexo.find_svg = function (elem) {
