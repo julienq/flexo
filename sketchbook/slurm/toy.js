@@ -70,7 +70,6 @@ instantiate.lambda = function (c, arg, val) {
 instantiate.number = instantiate.primitive = flexo.id;
 
 
-
 // Unwind the spine until a non-application cell is reached, pushing application
 // nodes encountered into the stack
 function unwind(stack, c) {
@@ -84,39 +83,35 @@ function unwind(stack, c) {
 // Reduce the expression at the given root, and return the (possibly
 // overwritten) root
 function reduce(root) {
-  var stack = [];
   console.log("  > reduce %0".fmt(root));
   while (root.tag === "application") {
+    var stack = [];
     var tip = unwind(stack, root);
+    var n = stack.length;
     console.log("  - reduce %0 [%1]".fmt(tip, stack.map(function (x) {
       return x.snd.toString();
     }).join(", ")));
     if (typeof tip === "string" || tip.tag === "cons" || tip.tag === "number") {
-      if (stack.length > 0) {
-        throw "reduction error: unexpected arguments to data object " +
-          tip.toString();
+      if (n > 0) {
+        throw "reduction error: unexpected arguments to data object %0".fmt(tip);
       }
     } else if (Array.isArray(tip.arity)) {
       var a = tip.arity.length;
-      var n = stack.length - 1;
-      if (n < a - 1) {
+      if (n < a) {
         break;
       }
       var new_root = tip.snd.apply(null, tip.arity.map(function (p, i) {
-        var arg = stack[n - i].snd;
-        return p ? reduce(arg, stack[n - i]) : arg;
+        var arg = stack[n - (i + 1)].snd;
+        return p ? reduce(arg) : arg;
       }));
-      stack.splice(n - a + 1, a);
-      overwrite_cell(stack.length > 0 ? stack[stack.length - 1].fst : root,
-          new_root);
+      overwrite_cell(stack[n - a], new_root);
     } else {
       if (stack.length === 0) {
         break;
       }
-      var arg = stack.pop();
-      new_root = instantiate(tip.snd, tip.fst, arg.snd);
-      overwrite_cell(stack.length > 0 ? stack[stack.length - 1].fst : root,
-          new_root);
+      var arg = stack[n - 1].snd;
+      new_root = instantiate(tip.snd, tip.fst, arg);
+      overwrite_cell(stack[n - 1], new_root);
     }
   }
   return root;
@@ -124,8 +119,11 @@ function reduce(root) {
 
 
 // Primitives
-var _plus = primitive_cell("+", function (x, y) {
+var _add = primitive_cell("+", function (x, y) {
   return cell("number", x.fst + y.fst);
+}, [true, true]);
+var _mul = primitive_cell("*", function (x, y) {
+  return cell("number", x.fst * y.fst);
 }, [true, true]);
 var _true = primitive_cell("TRUE", flexo.self, []);
 var _false = primitive_cell("FALSE", flexo.self, []);
@@ -144,7 +142,7 @@ var _fail = primitive_cell("FAIL", function () {
 
 var lambda = cell("lambda", "x",
     cell("application",
-      cell("application", _plus, "x"),
+      cell("application", _add, "x"),
       cell("number", 1)));
 console.log(lambda.toString());
 
@@ -162,3 +160,16 @@ console.log(reduce(cell("application",
             // cell("application", _fail, "x"))),
             "x")),
         cell("application", _not, _true))).toString());
+console.log(reduce(cell("application",
+        cell("lambda", "x",
+          cell("application", _add, "x")), cell("number", 42))).toString());
+console.log(reduce(cell("application",
+        cell("application",
+          cell("lambda", "x",
+            cell("application", _add, "x")), cell("number", 42)),
+        cell("number", 27))).toString());
+console.log(reduce(cell("application",
+        cell("application", _add, cell("number", 6)),
+        cell("application",
+          cell("application", _mul, cell("number", 3)),
+          cell("number", 4)))).toString());
