@@ -1,0 +1,39 @@
+body {
+  background-color: #888;
+  font-family: "Avenir Next", sans-serif;
+}
+
+.toolbar {
+  background-color: white;
+  display: inline-block;
+}
+
+.button {
+  text-align: center;
+  border: solid thin black;
+  padding: 0.2rem;
+  margin: 0.2rem;
+  cursor: default;
+}
+
+.button.down {
+  opacity: 0.5;
+}
+
+.button.selected { 
+  background-color: #000;
+  border-color: #000;
+  color: white;
+}
+
+svg {
+  background-color: white;
+}
+
+svg.tool-DrawLineTool, svg.tool-DrawRectangleTool, svg.tool-DrawEllipseTool {
+  cursor: crosshair;
+}
+
+svg.tool-SelectRectangleTool.dragging {
+  cursor: pointer;
+}

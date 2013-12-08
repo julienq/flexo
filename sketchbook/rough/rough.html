@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>✎ Rough</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../ui.css">
+    <link rel="stylesheet" href="rough.css">
+    <script src="../../flexo.js"></script>
+    <script src="../ui.js"></script>
+  </head>
+  <body class="felt" onload="rough.init_gui();">
+    <div class="toolbar">
+      <div class="button" data-tool="SelectRectangleTool">Select</div>
+      <div class="button" data-tool="DrawRectangleTool">Rectangle</div>
+      <div class="button" data-tool="DrawEllipseTool">Ellipse</div>
+    </div>
+    <svg viewBox="0 0 512 342" width="512" height="342">
+      <g transform="translate(0.5, 0.5)" stroke="black" fill="none"></g>
+    </svg>
+    <script src="rough.js"></script>
+    <script src="drag.js"></script>
+    <script src="shape.js"></script>
+  </body>
+</html>
