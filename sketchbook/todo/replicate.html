@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>*************************************************************</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="cache-control" content="no-cache">
+    <script src="../../flexo.js"></script>
+    <style>
+body {
+  font-family: "Avenir Next", sans-serif;
+}
+.hidden {
+  display: none;
+}
+    </style>
+  </head>
+  <body>
+    <p>A list of items:</p>
+    <ul>
+      <li data-replicate="4" data-value="it + 1">
+    </ul>
+    <ul>
+      <li data-replicate="this.list" data-value="'Something called %0'.fmt(it)">
+    </ul>
+    <script>
+"use strict";
+
+(function replicate(env) {
+  $foreach(document.querySelectorAll("[data-replicate]"), function (e) {
+    var parent = e.parentNode;
+    try {
+      if (e.dataset.value) {
+        var f = new Function("it", "i", "return " + e.dataset.value);
+      }
+    } catch (exception) {
+      console.warn("replicate: could not compile value function “%0”: %1"
+        .fmt(e.dataset.value, exception.message || exception));
+    }
+    if (typeof f !== "function") {
+      f = flexo.id;
+    }
+    var n = flexo.to_number(e.dataset.replicate);
+    var it = function (item, i) {
+      var e_ = e.cloneNode(false);
+      e_.removeAttribute("data-replicate");
+      e_.removeAttribute("data-value");
+      e_.innerHTML = f.call(env, item, i);
+      parent.insertBefore(e_, e);
+    };
+    if (n >= 0) {
+      for (var i = 0; i < n; ++i) {
+        it(i, i);
+      }
+    } else {
+      try {
+        $foreach((new Function("return " + e.dataset.replicate)).call(env), it);
+      } catch (exception) {
+        console.warn("replicate: could not get array-like object from " +
+          "function “%0”".fmt(e.dataset.replicate));
+      }
+    }
+    e.classList.add("hidden");
+  });
+}({ list: ["foo", "bar", "baz"] }));
+
+    </script>
+  </body>
+</html>
+
+
