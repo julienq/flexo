@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Wed 11 Dec 2013: How not to draw in a canvas</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../../flexo.js"></script>
+    <style>
+body.drawing, .wrong, .right {
+  cursor: crosshair;
+}
+.canvas-bg {
+  background-color: #f8f9f0;
+  border-radius: 0.5rem;
+  display: inline-block;
+  position: relative;
+  border: solid thick #4dbce9;
+}
+.canvas-bg canvas:not(:first-child) {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+div.wrong {
+  border-color: #ff6a4d;
+}
+div.right {
+  border-color: #5eb26b;
+}
+pre, code {
+  font-family: Inconsolata, monospace;
+}
+pre {
+  margin-left: 4rem;
+}
+    </style>
+  </head>
+  <body class="dark">
+
+    <h1>How not to draw in a canvas</h1>
+    <p class="date">Wed 11 Dec 2013, from the <a
+      href="../">Flexo sketchbook</a>.</p>
+
+    <p>Here is a simple way to draw in an HTML5 canvas that does not work:</p>
+
+    <p>
+      <div class="canvas-bg wrong">
+        <canvas data-draw="rough" data-target="unrough" width="320"
+          height="240"></canvas>
+      </div>
+      <div class="canvas-bg">
+        <canvas id="unrough" width="320" height="240"></canvas>
+      </div>
+    </p>
+
+    <p>Draw something in the orange canvas, and notice how rough the drawing is.
+    The blue, inactive canvas shows what the last path drawn should look like.
+    Have a look at a simplified version of the code below:</p>
+
+    <pre>function start(e) {
+  e.preventDefault();
+  context.beginPath();
+  var p = flexo.event_offset_pos(e, canvas);
+  context.moveTo(p.x, p.y);
+}
+
+function move(e) {
+  var p = flexo.event_offset_pos(e, canvas);
+  context.lineTo(p.x, p.y);
+  context.stroke();
+}</pre>
+
+    <p><code>start</code> and <code>move</code> are two event handlers for mouse
+    or touch events signifying that a drag a started or is ongoing. On start, a
+    new path is created, starting from the event position (here I make use of my
+    Javascript toolkit <a href="https://github.com/julienq/flexo">flexo</a>,
+    which contains lots of convenient utilities such as
+    <code>event_offset_pos</code>.) On move, a new line is added to the last
+    point, and the path is stroked so that it is shown in real time. And here
+    is the cause of the roughness—stroking the same path repeatedly. A simple
+    fix is shown below:</p>
+
+    <p>
+      <div class="canvas-bg right">
+        <canvas width="320" height="240" data-draw="smooth"></canvas>
+      </div>
+    </p>
+
+    <p>The solution here is to stroke each path segment individually.</p>
+
+    <pre>function move(e) {
+  var p = flexo.event_offset_pos(e, canvas);
+  context.lineTo(p.x, p.y);
+  context.stroke();
+  <span style="color:#5eb26b">context.beginPath();
+  context.moveTo(p.x, p.y);</span>
+}</pre>
+
+    <footer>
+      Check out the code <a href="https://github.com/julienq/flexo/tree/master/sketchbook/20131211-draw">on Github</a>!
+    </footer>
+
+    <script src="draw.js"></script>
+  </body>
+</html>
