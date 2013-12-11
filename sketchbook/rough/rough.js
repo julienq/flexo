@@ -57,7 +57,6 @@
   };
 
 
-  var select_rectangle_tool =
   flexo._class(rough.SelectRectangleTool = function (sketch) {
     this.init(sketch, new rough.DragArea(sketch.svg, function (p) {
       return sketch.add_shape(new rough.RectangleShape(flexo.$rect({ x: p.x,
@@ -68,29 +67,34 @@
     });
   }, rough.Tool);
 
-
-  var draw_rectangle_tool =
   flexo._class(rough.DrawRectangleTool = function (sketch) {
     this.init(sketch, new rough.DragArea(sketch.svg, function (p) {
       return sketch.add_shape(new rough.RectangleShape(flexo.$rect({ x: p.x,
         y: p.y })));
     }));
-    flexo.listen(this.drag, "dragstop", function (e) {
-      flexo.notify(this.sketch, "drawn", { shape: e.source.shape });
-    }.bind(this));
+    init_draw_tool(this);
   }, rough.Tool);
 
-  var draw_ellipse_tool =
   flexo._class(rough.DrawEllipseTool = function (sketch) {
     this.init(sketch, new rough.DragArea(sketch.svg, function (p) {
       return sketch.add_shape(new rough.EllipseShape(flexo.$ellipse({ cx: p.x,
         cy: p.y })));
     }));
-    flexo.listen(this.drag, "dragstop", function (e) {
-      flexo.notify(this.sketch, "drawn", { shape: e.source.shape });
-    }.bind(this));
+    init_draw_tool(this);
   }, rough.Tool);
 
+  flexo._class(rough.DrawPolylineTool = function (sketch) {
+    this.init(sketch, new rough.DragPolyline(sketch.svg));
+    init_draw_tool(this);
+  }, rough.Tool);
+
+
+  // Common initialization step for drawing tools
+  function init_draw_tool(tool) {
+    flexo.listen(tool.drag, "dragstop", function (e) {
+      flexo.notify(tool.sketch, "drawn", { shape: e.source.shape });
+    });
+  }
 
   // Init the sketch area and listen to events that are sent on its behalf.
   function init_sketch() {

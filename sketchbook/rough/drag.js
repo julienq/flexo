@@ -152,4 +152,13 @@
 
   drag_resize.move = drag_area.move;
 
+
+  // Drag to make a polyline
+  var drag_polyline = flexo._class(rough.DragPolyline = function (elem) {
+    this.init(elem);
+  }, rough.Drag);
+
+  drag_polyline.start = function (p) {
+  };
+
 }(window.rough));
