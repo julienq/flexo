@@ -1,0 +1,1 @@
+alert("Loaded test-script");

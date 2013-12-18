@@ -3,26 +3,36 @@
 
   var more = window.more = {};
 
-
-  // Create new promises
-
-  // Create a promise with a set timeout
-  more.promise_timeout = function (f, delay, message) {
-    return new Promise(function (resolve, reject) {
-      if (delay >= 0) {
-        setTimeout(function () {
-          reject(new Error(message || "Timeout"));
-        }, delay);
+  // Wrapper for promises, adding new instance methods resolve and reject, as
+  // well timeout (see below.)
+  var promise = (more.Promise = function (f) {
+    var promise = new Promise(function (resolve, reject) {
+      if (typeof resolve === "function") {
+        this.resolve = resolve;
+        this.reject = reject;
+      } else {
+        this.resolve = resolve.resolve.bind(resolve);
+        this.reject = resolve.reject.bind(resolve);
       }
-      f(resolve, reject);
-    });
+      if (typeof f === "function") {
+        f(this.resolve, this.reject);
+      }
+    }.bind(this));
+    this.then = promise.then.bind(promise);
+    this["catch"] = promise["catch"].bind(promise);
+  }).prototype;
+
+  promise.timeout = function (delay, message) {
+    if (delay >= 0) {
+      setTimeout(function () {
+        this.reject(new Error(message || "Timeout"));
+      }.bind(this), delay);
+    }
+    return this;
   };
 
-  // Create a promise that loads an image. `attrs` is a dictionary of attribute
-  // for the image and should contain a `src` property, or can simply be the
-  // source attribute value itself. The promise has a pointer to the `img`
-  // element.
-  more.promise_img = function (attrs) {
+
+  more.Promise.img = function (attrs) {
     return new Promise(function (resolve, reject) {
       var img = new window.Image();
       if (typeof attrs === "object") {
@@ -35,37 +45,49 @@
       if (img.complete) {
         resolve(img);
       } else {
-        img.onload = function () {
-          resolve(img);
-        };
+        img.onload = resolve.bind(null, img);
         img.onerror = reject;
       }
     });
   };
 
+  more.Promise.script = function (src, target, async) {
+    return new more.Promise(function (resolve, reject) {
+      if (!(target instanceof window.Node)) {
+        async = !!target;
+      }
+      if (!target) {
+        target = document.head;
+      }
+      var script = target.ownerDocument.createElement("script");
+      script.src = src;
+      script.async = async;
+      script.onload = resolve.bind(null, script);
+      script.onerror = reject;
+      target.appendChild(script);
+    });
+  };
+
   // Fold for a list of promises.
-  more.fold_promises = function (promises, f, z) {
+  more.Promise.fold = function (ps, f, z) {
     return (function fold (i, n) {
       if (i === n) {
-        return new Promise(function (resolve) {
-          resolve(z);
-        });
+        return new more.Promise().resolve(z);
       }
-      if (promises[i] && typeof promises[i].then === "function") {
-        return promises[i].then(function (value) {
-          z = f(z, value);
+      if (ps[i] && typeof ps[i].then === "function") {
+        return ps[i].then(function (x) {
+          z = f(z, x);
           return fold(i + 1, n);
         });
       }
-      z = f(z, promises[i]);
+      z = f(z, ps[i]);
       return fold(i + 1, n);
-    }(0, promises.length));
+    }(0, ps.length));
   };
 
-  // Collect a list of promises into the promise of a list.
-  more.collect_promises = function (promises) {
-    return more.fold_promises(promises, function (values, value) {
-      return values.push(value), values;
+  more.Promise.collect = function (ps) {
+    return more.Promise.fold(ps, function (z, x) {
+      return z.push(x), z;
     }, []);
   };
 

@@ -93,3 +93,27 @@ pre, code {
   font-family: Inconsolata, sans-serif;
   font-size: smaller;
 }
+
+.demo {
+  margin: 0 2rem;
+  background-color: #f8f9f0;
+  color: black;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.demo-button {
+  cursor: default;
+  border: solid thin #f8f9f0;
+  border-radius: 0.5rem;
+  padding: 0 .5rem;
+  margin: 1rem;
+}
+
+.demo-button.down {
+  background-color: #f8f9f0;
+  color: #333;
+}
+
+.fg-red { color: #a61416; }
+.bg-red { background-color: #a61416; }

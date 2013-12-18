@@ -5,7 +5,19 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="../sketch.css">
     <script src="../../flexo.js"></script>
+    <script src="../ui.js"></script>
     <script src="more.js"></script>
+    <style>
+#img-dest {
+  width: 400px;
+  height: 400px;
+  margin: 1rem auto;
+}
+#img-dest img {
+  max-width: 400px;
+  max-height: 400px;
+}
+    </style>
   </head>
   <body class="dark">
 
@@ -17,18 +29,35 @@
 
     <h2>Creating promises</h2>
 
-    <h3>Creating promises with a timeout</h3>
     <pre class="demo">var delay = Math.round(Math.random() * 1000);
-more.promise_timeout(function (resolve) {
+new more.Promise(function (resolve) {
   setTimeout(function () {
     resolve("Waited for " + delay + "ms.");
   }, delay);
-}, 500, "Could not wait for " + delay + "ms.").then(function (value) {
+}).timeout(500, "Could not wait for " + delay + "ms.").then(function (value) {
   output(value);
 }, function(error) {
   output(error.message);
-});
-    </pre>
+});</pre>
+
+    <pre class="demo">var url = "http://25.media.tumblr.com/tumblr_lw2bg55f2p1r70axlo1_500.png";
+var dest = document.getElementById("img-dest");
+dest.innerHTML = "";
+output("Loading image...");
+more.Promise.img(url).then(function (img) {
+  output("Loaded image.");
+  dest.appendChild(img);
+});</pre>
+    <div id="img-dest">No image yet.</div>
+
+    <pre class="demo">var url = "test-script.js";
+output("Loading script...");
+more.Promise.script(url).then(function (script) {
+  output("Loaded script.");
+  console.log(script);
+});</pre>
+
+    <h2>Folding a list of promises</h2>
 
     <footer>
       Check out the code <a href="https://github.com/julienq/flexo/tree/master/sketchbook/20131218-more">on Github</a>!
@@ -37,14 +66,36 @@ more.promise_timeout(function (resolve) {
     <script>
 "use strict";
 
-$foreach(document.querySelectorAll(".demo"), function (elem) {
-  var f = new Function("output", elem.textContent);
-  var p = flexo.add_after(flexo.$p({ "class": "output" }, "..."), elem);
-  f(function (message) {
-    p.textContent = message;
+function init_demos() {
+  $foreach(document.querySelectorAll(".demo"), function (elem) {
+    var f = new Function("output", elem.textContent);
+    var span = flexo.$span();
+    var button = flexo.ui.pushable(flexo.$span({ "class": "demo-button" },
+        "Try it"));
+    flexo.listen(button, "push", function () {
+      span.textContent = "...";
+      f(function (message) {
+        span.textContent = message;
+      });
+    });
+    flexo.add_after(flexo.$p({ "class": "output" }, button, span), elem);
   });
-});
-    </script>
+}
+
+(function () {
+  // load the polyfill if necessary
+  if (typeof Promise !== "function") {
+    var script = document.createElement("script");
+    script.src = "promise-0.1.0.min.js";
+    script.async = false;
+    document.head.appendChild(script);
+    script.onload = init_demos;
+  } else {
+    init_demos();
+  }
+}());
+
+      </script>
 
   </body>
 </html>
