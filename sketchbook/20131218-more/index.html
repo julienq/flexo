@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Wed 18 Dec 2013: MORE</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../../flexo.js"></script>
+    <script src="more.js"></script>
+  </head>
+  <body class="dark">
+
+    <h1>MORE</h1>
+    <p class="date">Wed 18 Dec 2013, from the <a
+      href="../">Flexo sketchbook</a>.</p>
+
+    <p>More promises.</p>
+
+    <h2>Creating promises</h2>
+
+    <h3>Creating promises with a timeout</h3>
+    <pre class="demo">var delay = Math.round(Math.random() * 1000);
+more.promise_timeout(function (resolve) {
+  setTimeout(function () {
+    resolve("Waited for " + delay + "ms.");
+  }, delay);
+}, 500, "Could not wait for " + delay + "ms.").then(function (value) {
+  output(value);
+}, function(error) {
+  output(error.message);
+});
+    </pre>
+
+    <footer>
+      Check out the code <a href="https://github.com/julienq/flexo/tree/master/sketchbook/20131218-more">on Github</a>!
+    </footer>
+
+    <script>
+"use strict";
+
+$foreach(document.querySelectorAll(".demo"), function (elem) {
+  var f = new Function("output", elem.textContent);
+  var p = flexo.add_after(flexo.$p({ "class": "output" }, "..."), elem);
+  f(function (message) {
+    p.textContent = message;
+  });
+});
+    </script>
+
+  </body>
+</html>

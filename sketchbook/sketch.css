@@ -23,12 +23,16 @@ footer, .date {
 }
 
 footer {
-  marigin: 4rem 0;
+  margin: 4rem 0;
 }
 
 h1 {
   font-weight: normal;
   text-align: center;
+}
+
+h2, h3 {
+  font-weight: normal;
 }
 
 body.full {
@@ -83,4 +87,9 @@ svg.full {
 
 .hidden {
   display: none;
+}
+
+pre, code {
+  font-family: Inconsolata, sans-serif;
+  font-size: smaller;
 }
