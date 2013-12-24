@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Tue 24 Dec 2013: Very simple terminal</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../ui.css">
+    <style>
+.term, .term input {
+  margin: 1em;
+  font-size: 1em;
+  font-family: "Avenir Next", sans-serif;
+}
+
+.term input {
+  border: none;
+  outline: none;
+  width: 100%;
+  margin: 0;
+}
+
+.term p:last-child {
+  display: flex;
+  display: -webkit-flex;
+}
+
+.term p:last-child span {
+  margin-right: 0.5rem;
+}
+    </style>
+    <script src="../../flexo.js"></script>
+    <script src="../ui.js"></script>
+  </head>
+  <body>
+    <div class="term">
+      <p><span></span><input type="text" name="prompt"></p>
+    </div>
+    <script src="term.js"></script>
+    <script>
+"use strict";
+
+var term = Object.create(flexo.ui.Term).init(document.querySelector(".term"));
+term.prompt = ">";
+term.focus();
+
+    </script>
+  </body>
+</html>
