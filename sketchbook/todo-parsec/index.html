@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Sun 5 Jan 2014: Homage to Parsec</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <style>
+
+body {
+  background-color: black;
+  margin: 0;
+}
+
+    </style>
+    <script src="../../flexo.js"></script>
+    <script src="../ui.js"></script>
+  </head>
+  <body>
+    <svg viewBox="0 0 568 320" class="full" width="100%" height="100%">
+      <defs>
+        <clipPath id="clip">
+          <rect width="568" height="320"></rect>
+        </clipPath>
+        <g id="ship" stroke="green" fill="black" stroke-width="2"
+          stroke-linejoin="round">
+          <path d="M6,0L18,0L27,9L15,9Z"></path>
+          <polyline points="9,21 6,21 0,9 33,9 42,18 45,18 42,18 39,21 27,21
+            21,30 0,30 3,30 15,15 24,15"></polyline>
+          <polyline points="27,9 33,15 39,15"></polyline>
+        </g>
+      </defs>
+      <g clip-path="url(#clip)"></g>
+      <g id="player_ship">
+        <use xlink:href="#ship"></use>
+      </g>
+    </svg>
+    <script src="game.js"></script>
+  </body>
+</html>
