@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Thu 9 Jan 2014: Polygons</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../../flexo.js"></script>
+    <style>
+footer {
+  font-size: small;
+  text-align: right;
+  position: absolute;
+  margin: 0;
+  bottom: 1rem;
+  right: 1rem;
+}
+    </style>
+  </head>
+  <body class="full dark">
+    <svg class="full" viewBox="0 0 400 400">
+      <g stroke-linejoin="round">
+      </g>
+    </svg>
+
+    <footer>
+      Thu 9 Jan 2014, from the <a href="../">Flexo sketchbook</a>.<br>
+      Check out the code <a href="https://github.com/julienq/flexo/tree/master/sketchbook/20140109-poly">on Github</a>!
+    </footer>
+
+    <script>
+"use strict";
+
+var args = flexo.get_args({ max: 13, stroke: 12 });
+var dur = 750;
+var pause = 1250;
+
+var g = document.querySelector("g");
+g.setAttribute("stroke-width", args.stroke);
+var vb = g.parentNode.viewBox.baseVal;
+var r = Math.min(vb.width, vb.height) / 2;
+var l = 2 * r * Math.sin(π / args.max) - (args.stroke / 2);
+
+// TODO: compute the right h so that the largest polygon is inscribed in the
+// circle.
+
+/*
+var h = Math.sin(π / args.max) * (Math.sqrt((l / 2) * (l / 2) + r * r) - r);
+g.parentNode.appendChild(flexo.$rect({ x: (vb.width + vb.x - h) / 2, width: h,
+      height: h }));
+g.parentNode.appendChild(flexo.$circle({ cx: (vb.width + vb.x) / 2, cy: y - r,
+      r: r, stroke: "red", fill: "none" }));
+*/
+
+var x = (vb.width + vb.x - l) / 2;
+var y = vb.height + vb.y - (args.stroke / 2); //  - h;
+
+// Draw a regular polygon (into a path element) starting at x, y, with sides
+// sides of length sz. The fill is given by h (the phase for hue, in radians),
+// s and v.
+function polygon(x, y, sz, sides, h, s, v) {
+  var d = "M%0,%1".fmt(x, y);
+  var th = _2π / sides;
+  for (var i = 0; i < sides; ++i) {
+    x += sz * Math.cos(th * i);
+    y -= sz * Math.sin(th * i);
+    d += "L%0,%1".fmt(x, y);
+  }
+  var color = flexo.hsv_to_hex(h + (sides - 2) * (_2π / args.max), s, v);
+  return flexo.$path({ d: d + "Z", fill: color, stroke: color });
+}
+
+// Clear the draw area; then draw polygon after polygon, with increasing number
+// of sides, then wait and start again.
+// TODO improve the scheduling so that we don’t have to accumulate the waiting
+// time.
+(function polygons() {
+  var h = flexo.random_number(_2π);
+  var s = flexo.random_number(0.5, 1);
+  var v = flexo.random_number(0.5, 1);
+  flexo.remove_children(g);
+  flexo.fold_promises(flexo.times(args.max - 2, function (i) {
+    return flexo.promise_delay(function () {
+      g.insertBefore(polygon(x, y, l, i + 3, h, s, v), g.firstChild);
+    }, dur * (i + 1));
+  }), flexo.nop).then(function() {
+    return flexo.promise_delay(flexo.nop, pause);
+  }).then(polygons);
+}());
+
+    </script>
+  </body>
+</html>

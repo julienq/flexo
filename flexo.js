@@ -25,6 +25,7 @@
 
   // Define π as a global
   global_.π = Math.PI;
+  global_._2π = 2 * Math.PI;
 
 
   // Pseudo-macros
@@ -280,6 +281,14 @@
     return min + Math.floor(Math.random() * (max + 1 - min));
   };
 
+  flexo.random_number = function (min, max) {
+    if (arguments.length === 1) {
+      max = min;
+      min = 0;
+    }
+    return min + Math.random() * (max - min);
+  };
+
 
   // Arrays
 
@@ -403,6 +412,16 @@
       shuffled[j] = x;
     }
     return shuffled;
+  };
+
+  // Call f n times and store the results in an array of n items that gets
+  // returned.
+  flexo.times = function (n, f, that) {
+    var items = [];
+    for (var i = 0; i < n; ++i) {
+      items.push(f.call(that, i, n, items));
+    }
+    return items;
   };
 
   // Create a new urn to pick from. The argument is the array of items in the
