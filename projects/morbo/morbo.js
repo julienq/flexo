@@ -122,7 +122,7 @@ transaction.handle.GET = function () {
     if (stats.isFile()) {
       this.serve_local_file(filename, stats);
     } else if (stats.isDirectory()) {
-      this.serve_directory(filename, stats);
+      this.serve_index(filename, stats);
     } else if (stats.isSymbolicLink()) {
       this.serve_symbolic_link(filename, stats);
     } else {
@@ -135,14 +135,15 @@ transaction.handle.GET = function () {
 
 // Send a text/plain status response
 transaction.plain_status = function (status) {
-  this.response.writeHead(status,
-      head_params({ "Content-Type": "text/plain" }));
   var text = status.toString();
   var message = http.STATUS_CODES[status];
   if (message) {
     text += " " + message;
   }
-  this.response.end(text);
+  this.response.writeHead(status,
+      exports.head_params({ "Content-Type": "text/plain" }, text));
+  this.response.write(text);
+  this.response.end();
 };
 
 // Serve a regular file from the root directory
@@ -159,6 +160,20 @@ transaction.serve_local_file = function (filename, stats) {
     this.response.end();
   }.bind(this));
   stream.pipe(this.response);
+};
+
+transaction.serve_index = function (dirname, stats) {
+  var index = path.join(dirname, "index.html");
+  console.info("  index:", index);
+  exports.promisify(fs.lstat, index).then(function (stats) {
+    if (stats.isFile()) {
+      this.serve_local_file(index, stats);
+    } else {
+      this.serve_directory(dirname, stats);
+    }
+  }.bind(this), function (err) {
+    this.serve_directory(dirname, stats);
+  }.bind(this));
 };
 
 transaction.serve_directory = function () {
