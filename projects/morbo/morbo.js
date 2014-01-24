@@ -133,6 +133,22 @@ transaction.handle.GET = function () {
   }.bind(this));
 };
 
+// Return a promise of the data for the request
+transaction.get_data = function () {
+  var promise = new flexo.Promise();
+  var data = "";
+  this.request.on("data", function (chunk) {
+    data += chunk.toString();
+  });
+  this.request.on("error", function () {
+    promise.reject();
+  });
+  this.request.on("end", function () {
+    promise.fulfill(data);
+  });
+  return promise;
+};
+
 // Send a text/plain status response
 transaction.plain_status = function (status) {
   var text = status.toString();
@@ -189,9 +205,9 @@ transaction.serve_symbolic_link = function () {
 
 // Parse arguments from the command line, and add them to an object containing
 // the default arguments.
-function get_args(args) {
+function get_args(argv, args) {
   var m;
-  process.argv.slice(2).forEach(function (arg) {
+  argv.forEach(function (arg) {
     if (m = arg.match(/^-?-?port=(\d+)/i)) {
       args.port = parseInt(m[1], 10);
     } else if (m = arg.match(/^-?-?ip=(\S*)/i)) {
@@ -263,25 +279,36 @@ function show_help(node, name) {
   if (require.main !== module) {
     return;
   }
-  var args = get_args({ apps: [], host: get_first_ip_address(), port: 8910,
-    documents: "." });
+  var argv = process.argv.slice(2);
+  var args = get_args(argv, { apps: [], host: get_first_ip_address(),
+    port: 8910, documents: "." });
   if (args.help) {
     show_help.apply(null, process.argv);
   }
-  flexo.fold_promises(args.apps.map(function (appname) {
-    util.log("App: %0 (%1)".fmt(appname, require.resolve(appname)));
-    var app = require(appname);
-    flexo.unshift_all(exports.PATTERNS, app.PATTERNS);
-    if (typeof app.init === "function") {
-      return app.init(exports);
+
+  (function load(i, n) {
+    if (i === n) {
+      exports.create_server(args).then(function (conf) {
+        util.log("Listening at http://%0:%1/".fmt(conf.host, conf.port));
+        util.log("Document root: %0".fmt(conf.documents));
+      }, function (reason) {
+        console.error("Could not create server: %0".fmt(reason));
+      });
+    } else {
+      var appname = args.apps[i];
+      util.log("App: %0 (%1)".fmt(appname, require.resolve(appname)));
+      var app = require(appname);
+      flexo.unshift_all(exports.PATTERNS, app.PATTERNS);
+      if (typeof app.init === "function") {
+        var p = app.init(exports, argv);
+        if (p && p.then) {
+          return p.then(function () {
+            load(i + 1, n);
+          });
+        }
+      }
+      load(i + 1, n);
     }
-  }), flexo.nop).then(function () {
-    return exports.create_server(args);
-  }).then(function (conf) {
-    util.log("Listening at http://%0:%1/".fmt(conf.host, conf.port));
-    util.log("Document root: %0".fmt(conf.documents));
-  }, function (reason) {
-    console.error("Could not create server: %0".fmt(reason));
-  });
+  }(0, args.apps.length));
 
 }());
