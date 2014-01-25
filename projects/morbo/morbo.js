@@ -231,6 +231,7 @@ function get_first_ip_address() {
         return flexo.find_first(if_, function (a) {
           if (a.family === "IPv4" && a.address !== "127.0.0.1") {
             ip = a.address;
+            return true;
           }
         });
       });

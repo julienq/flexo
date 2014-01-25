@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="../sketch.css">
     <script src="../../flexo.js"></script>
     <script src="../ui.js"></script>
+    <script src="promise-0.1.0.min.js"></script>
     <script src="more.js"></script>
     <style>
 #img-dest {
@@ -44,7 +45,7 @@ new more.Promise(function (resolve) {
 var dest = document.getElementById("img-dest");
 dest.innerHTML = "";
 output("Loading image...");
-more.Promise.img(url).then(function (img) {
+more.img(url).then(function (img) {
   output("Loaded image.");
   dest.appendChild(img);
 });</pre>
@@ -52,10 +53,28 @@ more.Promise.img(url).then(function (img) {
 
     <pre class="demo">var url = "test-script.js";
 output("Loading script...");
-more.Promise.script(url).then(function (script) {
+more.script(url).then(function (script) {
   output("Loaded script.");
   console.log(script);
 });</pre>
+
+    <pre class="demo">output("Waiting...");
+more.par([
+  more.delay(output.bind(window, "100ms"), 100),
+  more.delay(output.bind(window, "300ms"), 300),
+  more.delay(output.bind(window, "500ms"), 500),
+  more.delay(output.bind(window, "1000ms"), 1000)
+]).then(output.bind(window, "1s total."));</pre>
+
+    <pre class="demo">output("Waiting...");
+more.seq([
+  more.delay(function () {
+    more.wrap(output.bind(window, "first 100ms"));
+  }, 100)
+  more.delay(function () {
+    more.wrap(output.bind(window, "then 300ms"));
+  }, 300)
+]).then(output.bind(window, "done."));</pre>
 
     <h2>Folding a list of promises</h2>
 
@@ -66,34 +85,19 @@ more.Promise.script(url).then(function (script) {
     <script>
 "use strict";
 
-function init_demos() {
-  $foreach(document.querySelectorAll(".demo"), function (elem) {
-    var f = new Function("output", elem.textContent);
-    var span = flexo.$span();
-    var button = flexo.ui.pushable(flexo.$span({ "class": "demo-button" },
-        "Try it"));
-    flexo.listen(button, "push", function () {
-      span.textContent = "...";
-      f(function (message) {
-        span.textContent = message;
-      });
+$foreach(document.querySelectorAll(".demo"), function (elem) {
+  var f = new Function("output", elem.textContent);
+  var span = flexo.$span();
+  var button = flexo.ui.pushable(flexo.$span({ "class": "demo-button" },
+      "Try it"));
+  flexo.listen(button, "push", function () {
+    span.textContent = "...";
+    f(function (message) {
+      span.textContent = message;
     });
-    flexo.add_after(flexo.$p({ "class": "output" }, button, span), elem);
   });
-}
-
-(function () {
-  // load the polyfill if necessary
-  if (typeof Promise !== "function") {
-    var script = document.createElement("script");
-    script.src = "promise-0.1.0.min.js";
-    script.async = false;
-    document.head.appendChild(script);
-    script.onload = init_demos;
-  } else {
-    init_demos();
-  }
-}());
+  flexo.add_after(flexo.$p({ "class": "output" }, button, span), elem);
+});
 
       </script>
 

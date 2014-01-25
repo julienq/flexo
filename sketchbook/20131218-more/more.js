@@ -4,7 +4,7 @@
   var more = window.more = {};
 
   // Wrapper for promises, adding new instance methods resolve and reject, as
-  // well timeout (see below.)
+  // well as timeout (see below.)
   var promise = (more.Promise = function (f) {
     var promise = new Promise(function (resolve, reject) {
       if (typeof resolve === "function") {
@@ -22,17 +22,18 @@
     this["catch"] = promise["catch"].bind(promise);
   }).prototype;
 
-  promise.timeout = function (delay, message) {
-    if (delay >= 0) {
+  promise.timeout = function (ms, error) {
+    if (ms >= 0) {
       setTimeout(function () {
-        this.reject(new Error(message || "Timeout"));
-      }.bind(this), delay);
+        this.reject(error instanceof Error ? error :
+          new Error(error || "Timeout"));
+      }.bind(this), ms);
     }
     return this;
   };
 
 
-  more.Promise.img = function (attrs) {
+  more.img = function (attrs) {
     return new Promise(function (resolve, reject) {
       var img = new window.Image();
       if (typeof attrs === "object") {
@@ -51,13 +52,13 @@
     });
   };
 
-  more.Promise.script = function (src, target, async) {
+  more.script = function (src, target, async) {
     return new more.Promise(function (resolve, reject) {
       if (!(target instanceof window.Node)) {
         async = !!target;
       }
       if (!target) {
-        target = document.head;
+        target = document.head || document.documentElement;
       }
       var script = target.ownerDocument.createElement("script");
       script.src = src;
@@ -69,7 +70,7 @@
   };
 
   // Fold for a list of promises.
-  more.Promise.fold = function (ps, f, z) {
+  more.fold = function (ps, f, z) {
     return (function fold (i, n) {
       if (i === n) {
         return new more.Promise().resolve(z);
@@ -85,10 +86,49 @@
     }(0, ps.length));
   };
 
-  more.Promise.collect = function (ps) {
-    return more.Promise.fold(ps, function (z, x) {
+
+  // Synchronization
+
+  // Wrap the return value of a function into a promise, so that the function
+  // becomes thenable.
+  more.wrap = function (f) {
+    return function (v) {
+      return new more.Promise().resolve(f(v));
+    };
+  };
+
+  // Make a promise to delay the execution of f by `ms` milliseconds.
+  more.delay = function (f, ms) {
+    var promise = new more.Promise();
+    setTimeout(function () {
+      promise.resolve(f());
+    }, ms >= 0 ? ms : 0);
+    return promise;
+  };
+
+  // Make a promise to wait for `ms` milliseconds.
+  more.Promise.wait = function (ms) {
+    return more.delay(function () {}, ms);
+  };
+
+  // Parallel container for promises: turn a list of promises into the promise
+  // of a list.
+  more.par = function (ps) {
+    return more.fold(ps, function (z, x) {
       return z.push(x), z;
     }, []);
   };
+
+  // Sequential container for promises: turn a list of promises into a single
+  // promise for its last value.
+  more.seq = function (ps) {
+    return more.fold(ps, function (z, x) {
+      return typeof x === "function" ? x(z) : x;
+    });
+  };
+
+
+  // Media containers
+
 
 }());

@@ -21,17 +21,28 @@ body {
         <clipPath id="clip">
           <rect width="568" height="320"></rect>
         </clipPath>
-        <g id="ship" stroke="green" fill="black" stroke-width="2"
-          stroke-linejoin="round">
+        <g id="ship" fill="black" stroke-width="2" stroke-linejoin="round">
           <path d="M6,0L18,0L27,9L15,9Z"></path>
           <polyline points="9,21 6,21 0,9 33,9 42,18 45,18 42,18 39,21 27,21
             21,30 0,30 3,30 15,15 24,15"></polyline>
           <polyline points="27,9 33,15 39,15"></polyline>
         </g>
+        <g id="swooper" fill="black" stroke-width="2" stroke-linejoin="round">
+          <path d="M12,12L24,0L39,0L27,12Z"></path>
+          <path d="M0,18L9,12L24,12L24,18Z"></path>
+          <path d="M12,21L24,9L39,9L27,21Z"></path>
+        </g>
       </defs>
-      <g clip-path="url(#clip)"></g>
-      <g id="player_ship">
-        <use xlink:href="#ship"></use>
+      <g clip-path="url(#clip)">
+        <g id="layers"></g>
+        <g stroke="blue" id="enemies">
+          <use xlink:href="#swooper" x="200" y="200"></use>
+          <use xlink:href="#swooper" x="300" y="200"></use>
+          <use xlink:href="#swooper" x="400" y="200"></use>
+        </g>
+        <g stroke="green" id="player_ship">
+          <use xlink:href="#ship"></use>
+        </g>
       </g>
     </svg>
     <script src="game.js"></script>

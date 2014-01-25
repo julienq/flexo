@@ -13,12 +13,12 @@
   var H = bbox.height;
 
   var defs = svg.querySelector("defs");
-  var g = svg.querySelector("g[clip-path]");
+  var layers_g = document.getElementById("layers");
 
   parsec.Sliced = {
     width: W / N_SLICES,
     init: function (vx) {
-      this.g = g.appendChild(flexo.$g());
+      this.g = layers_g.appendChild(flexo.$g());
       this.x = 0;
       this.vx = vx;
       this.slices = flexo.times(M_SLICES, this.generate.bind(this));
@@ -129,9 +129,10 @@
       this.element.setAttribute("transform",
           "translate(%0, %1)".fmt(this.x, this.y));
       if (this.fire) {
+        var y = this.y + this.laser.y;
         var line = this.element.parentNode.insertBefore(flexo.$line({
-          x1: this.x + this.laser.x, y1: this.y + this.laser.y, x2: W,
-          y2: this.y + this.laser.y, stroke: "red", "stroke-linecap": "round",
+          x1: this.x + this.laser.x, y1: y, x2: W, y2: y,
+          stroke: "red", "stroke-linecap": "round",
           "stroke-width": 1 }), this.element);
         this.fire = false;
         setTimeout(function () {
