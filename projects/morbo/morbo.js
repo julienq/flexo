@@ -7,7 +7,7 @@ var util = require("util");
 var url = require("url");
 var flexo = require("flexo");
 
-exports.PATTERNS = [];
+exports.routes = [];
 exports.SERVER_NAME = "Morbo!";
 
 // Known content types by extension.
@@ -89,6 +89,15 @@ exports.promisify = function (f) {
   return p;
 };
 
+// Override this function in a module for fancier error pages.
+exports.serve_error_page = function (transaction, code, log) {
+  var msg = exports.STATUS_CODES[code] || "(unknown error code)";
+  if (log) {
+    transaction.log_error = "%0: %1 (%2)".fmt(code, msg, log);
+  }
+  transaction.serve_data(code, "text/plain", "%0 %1\n".fmt(code, msg));
+};
+
 
 // Transaction object—wraps a request and response object, and knows the root
 // documents directory.
@@ -161,6 +170,27 @@ transaction.plain_status = function (status) {
   this.response.write(text);
   this.response.end();
 };
+
+// Serve data by writing the correct headers (plus the ones already given,
+// if any) and the data
+transaction.serve_data = function (code, type, data, params) {
+  write_head(this, code, type, data, params);
+  if (this.request.method.toUpperCase() === "HEAD") {
+    this.response.end();
+  } else {
+    this.response.end(data);
+  }
+  util.log(this.log_info);
+  if (this.log_error) {
+    util.error(this.log_error);
+  }
+},
+
+// Return an error as text with a code and an optional debug message
+// TODO provide a function to customize error pages
+transaction.serve_error = function (code, log) {
+  exports.serve_error_page(this, code, log);
+},
 
 // Serve a regular file from the root directory
 transaction.serve_local_file = function (filename, stats) {
@@ -263,6 +293,44 @@ function html_top(params, head) {
       true);
 }
 
+function route(transaction) {
+  var pathname = decodeURIComponent(transaction.url.pathname);
+  var method = request.method.toUpperCase();
+  if (method === "HEAD") {
+    method = "GET";
+  }
+  var handled = false;
+  for (var i = 0, n = exports.routes.length; !handled && i < n; ++i) {
+    var m = pathname.match(exports.routes[i][0]);
+    if (m) {
+      var methods = exports.routes[i][1];
+      if (!methods.hasOwnProperty(method)) {
+        var allowed = [];
+        if (methods.hasOwnProperty("GET")) {
+          allowed.push("HEAD");
+        }
+        flexo.push_all(allowed, Object.keys(methods));
+        transaction.response.setHeader("Allow", allowed.sort().join(", "));
+        return transaction.serve_error(405,
+            "Method %0 not allowed for %1".fmt(method, pathname));
+      }
+      var args = m.slice();
+      args[0] = transaction;
+      handled = methods[method].apply(exports, args) !== false;
+    }
+  }
+  if (!handled) {
+    if (method === "GET") {
+      serve_file_or_index(transaction, pathname);
+    } else {
+      transaction.response.setHeader("Allow", "GET, HEAD");
+      transaction.serve_error(405,
+        "Method %0 not allowed for %1".fmt(method, pathname));
+    }
+  }
+}
+
+
 // Show help info and quit.
 function show_help(node, name) {
   console.log("\nUsage: %0 %1 [options]\n\nOptions:".fmt(node, name));
@@ -299,7 +367,7 @@ function show_help(node, name) {
       var appname = args.apps[i];
       util.log("App: %0 (%1)".fmt(appname, require.resolve(appname)));
       var app = require(appname);
-      flexo.unshift_all(exports.PATTERNS, app.PATTERNS);
+      flexo.unshift_all(exports.routes, app.routes);
       if (typeof app.init === "function") {
         var p = app.init(exports, argv);
         if (p && p.then) {
