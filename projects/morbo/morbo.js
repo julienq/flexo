@@ -35,7 +35,7 @@ exports.create_server = function (args) {
   var port = flexo.to_number(args.port);
   var root = path.resolve(process.cwd(), args.documents);
   var server = http.createServer(function (request, response) {
-    new exports.Transaction(request, response, root).handle();
+    new exports.Transaction(request, response, root).route();
   }).listen(port, args.host);
   server.on("listening", function () {
     promise.fulfill({ host: args.host, port: port, documents: root });
@@ -90,12 +90,10 @@ exports.promisify = function (f) {
 };
 
 // Override this function in a module for fancier error pages.
-exports.serve_error_page = function (transaction, code, log) {
-  var msg = exports.STATUS_CODES[code] || "(unknown error code)";
-  if (log) {
-    transaction.log_error = "%0: %1 (%2)".fmt(code, msg, log);
-  }
-  transaction.serve_data(code, "text/plain", "%0 %1\n".fmt(code, msg));
+exports.serve_error_page = function (transaction, code) {
+  var msg = http.STATUS_CODES[code] || "(unknown error code)";
+  transaction.serve_data(code, { "Content-Type": "text/plain" },
+      "%0 %1\n".fmt(code, msg));
 };
 
 
@@ -103,44 +101,10 @@ exports.serve_error_page = function (transaction, code, log) {
 // documents directory.
 var transaction = (exports.Transaction = function (request, response, root) {
   this.request = request;
-  this.url = url.parse(this.request.url, true);
   this.response = response;
   this.root = root;
+  this.url = url.parse(this.request.url, true);
 }).prototype;
-
-// Handle the transaction, depending on the request method.
-transaction.handle = function () {
-  var f = this.handle[this.request.method.toUpperCase()];
-  if (typeof f === "function") {
-    f.call(this);
-  } else {
-    this.plain_status(501);
-  }
-};
-
-// GET a file; return 403/404 errors in case of error.
-transaction.handle.GET = function () {
-  var filename = path.normalize(path.join(this.root,
-        decodeURIComponent(this.url.pathname)));
-  console.log("GET %0 -> %1".fmt(this.request.url, filename));
-  if (filename.indexOf(this.root) !== 0) {
-    console.log("  not rooted: forbidden");
-    return this.plain_status(403);
-  }
-  exports.promisify(fs.lstat, filename).then(function (stats) {
-    if (stats.isFile()) {
-      this.serve_local_file(filename, stats);
-    } else if (stats.isDirectory()) {
-      this.serve_index(filename, stats);
-    } else if (stats.isSymbolicLink()) {
-      this.serve_symbolic_link(filename, stats);
-    } else {
-      this.plain_status(403);
-    }
-  }.bind(this), function () {
-    this.plain_status(404);
-  }.bind(this));
-};
 
 // Return a promise of the data for the request
 transaction.get_data = function () {
@@ -171,25 +135,58 @@ transaction.plain_status = function (status) {
   this.response.end();
 };
 
+transaction.route = function () {
+  var pathname = decodeURIComponent(this.url.pathname);
+  var method = this.request.method.toUpperCase();
+  if (method === "HEAD") {
+    method = "GET";
+  }
+  var handled = false;
+  for (var i = 0, n = exports.routes.length; !handled && i < n; ++i) {
+    var m = pathname.match(exports.routes[i][0]);
+    if (m) {
+      var methods = exports.routes[i][1];
+      if (!methods.hasOwnProperty(method)) {
+        var allowed = [];
+        if (methods.hasOwnProperty("GET")) {
+          allowed.push("HEAD");
+        }
+        flexo.push_all(allowed, Object.keys(methods));
+        this.response.setHeader("Allow", allowed.sort().join(", "));
+        return this.serve_error(405,
+            "Method %0 not allowed for %1".fmt(method, pathname));
+      }
+      var args = m.slice();
+      args[0] = this;
+      handled = methods[method].apply(exports, args) !== false;
+    }
+  }
+  if (!handled) {
+    if (method === "GET") {
+      this.serve_static_path(pathname);
+    } else {
+      this.response.setHeader("Allow", "GET, HEAD");
+      this.serve_error(405,
+        "Method %0 not allowed for %1".fmt(method, pathname));
+    }
+  }
+}
+
 // Serve data by writing the correct headers (plus the ones already given,
 // if any) and the data
-transaction.serve_data = function (code, type, data, params) {
-  write_head(this, code, type, data, params);
+transaction.serve_data = function (code, params, data) {
+  this.response.writeHead(code, exports.head_params(params, data));
   if (this.request.method.toUpperCase() === "HEAD") {
     this.response.end();
   } else {
     this.response.end(data);
   }
-  util.log(this.log_info);
-  if (this.log_error) {
-    util.error(this.log_error);
-  }
 },
 
 // Return an error as text with a code and an optional debug message
 // TODO provide a function to customize error pages
-transaction.serve_error = function (code, log) {
-  exports.serve_error_page(this, code, log);
+transaction.serve_error = function (code) {
+  exports.serve_error_page(this, code);
 },
 
 // Serve a regular file from the root directory
@@ -226,6 +223,28 @@ transaction.serve_directory = function () {
   console.info("  directory: forbidden");
   this.plain_status(403);
 };
+
+transaction.serve_static_path = function (pathname) {
+  var filename = path.normalize(path.join(this.root,
+        decodeURIComponent(pathname || this.url.pathname)));
+  if (filename.indexOf(this.root) !== 0) {
+    console.info("  not rooted: forbidden");
+    return this.plain_status(403);
+  }
+  exports.promisify(fs.lstat, filename).then(function (stats) {
+    if (stats.isFile()) {
+      this.serve_local_file(filename, stats);
+    } else if (stats.isDirectory()) {
+      this.serve_index(filename, stats);
+    } else if (stats.isSymbolicLink()) {
+      this.serve_symbolic_link(filename, stats);
+    } else {
+      this.plain_status(403);
+    }
+  }.bind(this), function () {
+    this.plain_status(404);
+  }.bind(this));
+}
 
 transaction.serve_symbolic_link = function () {
   console.info("  symbolic link: forbidden");
@@ -293,53 +312,16 @@ function html_top(params, head) {
       true);
 }
 
-function route(transaction) {
-  var pathname = decodeURIComponent(transaction.url.pathname);
-  var method = request.method.toUpperCase();
-  if (method === "HEAD") {
-    method = "GET";
-  }
-  var handled = false;
-  for (var i = 0, n = exports.routes.length; !handled && i < n; ++i) {
-    var m = pathname.match(exports.routes[i][0]);
-    if (m) {
-      var methods = exports.routes[i][1];
-      if (!methods.hasOwnProperty(method)) {
-        var allowed = [];
-        if (methods.hasOwnProperty("GET")) {
-          allowed.push("HEAD");
-        }
-        flexo.push_all(allowed, Object.keys(methods));
-        transaction.response.setHeader("Allow", allowed.sort().join(", "));
-        return transaction.serve_error(405,
-            "Method %0 not allowed for %1".fmt(method, pathname));
-      }
-      var args = m.slice();
-      args[0] = transaction;
-      handled = methods[method].apply(exports, args) !== false;
-    }
-  }
-  if (!handled) {
-    if (method === "GET") {
-      serve_file_or_index(transaction, pathname);
-    } else {
-      transaction.response.setHeader("Allow", "GET, HEAD");
-      transaction.serve_error(405,
-        "Method %0 not allowed for %1".fmt(method, pathname));
-    }
-  }
-}
-
 
 // Show help info and quit.
 function show_help(node, name) {
-  console.log("\nUsage: %0 %1 [options]\n\nOptions:".fmt(node, name));
-  console.log("  app=<app.js>:       path to application file");
-  console.log("  documents=<dir>:    path to the documents directory");
-  console.log("  help:               show this help message");
-  console.log("  host=<ip address>:  host IP address to listen to");
-  console.log("  port=<port number>: port number for the server");
-  console.log("");
+  console.info("\nUsage: %0 %1 [options]\n\nOptions:".fmt(node, name));
+  console.info("  app=<app.js>:       path to application file");
+  console.info("  documents=<dir>:    path to the documents directory");
+  console.info("  help:               show this help message");
+  console.info("  host=<ip address>:  host IP address to listen to");
+  console.info("  port=<port number>: port number for the server");
+  console.info("");
   process.exit(0);
 }
 
@@ -358,8 +340,8 @@ function show_help(node, name) {
   (function load(i, n) {
     if (i === n) {
       exports.create_server(args).then(function (conf) {
-        util.log("Listening at http://%0:%1/".fmt(conf.host, conf.port));
-        util.log("Document root: %0".fmt(conf.documents));
+        util.info("Listening at http://%0:%1/".fmt(conf.host, conf.port));
+        util.info("Document root: %0".fmt(conf.documents));
       }, function (reason) {
         console.error("Could not create server: %0".fmt(reason));
       });
