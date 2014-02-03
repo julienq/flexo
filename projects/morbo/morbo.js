@@ -33,12 +33,12 @@ exports.content_type = function (filename) {
 exports.create_server = function (args) {
   var promise = new flexo.Promise();
   var port = flexo.to_number(args.port);
-  var root = path.resolve(process.cwd(), args.documents);
+  var documents = path.resolve(process.cwd(), args.documents);
   var server = http.createServer(function (request, response) {
-    new exports.Transaction(request, response, root).route();
+    new exports.Transaction(request, response, documents).route();
   }).listen(port, args.host);
   server.on("listening", function () {
-    promise.fulfill({ host: args.host, port: port, documents: root });
+    promise.fulfill({ host: args.host, port: port, documents: documents });
   });
   return promise;
 };
@@ -89,13 +89,6 @@ exports.promisify = function (f) {
   return p;
 };
 
-// Override this function in a module for fancier error pages.
-exports.serve_error_page = function (transaction, code) {
-  var msg = http.STATUS_CODES[code] || "(unknown error code)";
-  transaction.serve_data(code, { "Content-Type": "text/plain" },
-      "%0 %1\n".fmt(code, msg));
-};
-
 
 // Transaction object—wraps a request and response object, and knows the root
 // documents directory.
@@ -138,6 +131,7 @@ transaction.plain_status = function (status) {
 transaction.route = function () {
   var pathname = decodeURIComponent(this.url.pathname);
   var method = this.request.method.toUpperCase();
+  util.log("%0 %1".fmt(method, pathname));
   if (method === "HEAD") {
     method = "GET";
   }
@@ -170,7 +164,7 @@ transaction.route = function () {
         "Method %0 not allowed for %1".fmt(method, pathname));
     }
   }
-}
+};
 
 // Serve data by writing the correct headers (plus the ones already given,
 // if any) and the data
@@ -181,18 +175,24 @@ transaction.serve_data = function (code, params, data) {
   } else {
     this.response.end(data);
   }
-},
+};
 
-// Return an error as text with a code and an optional debug message
-// TODO provide a function to customize error pages
+// Override this function in a module for fancier error pages.
 transaction.serve_error = function (code) {
-  exports.serve_error_page(this, code);
-},
+  var msg = http.STATUS_CODES[code] || "(unknown error code)";
+  this.serve_data(code, { "Content-Type": "text/plain" },
+      "%0 %1\n".fmt(code, msg));
+};
+
+// Serve generated HTML
+transaction.serve_html = function (html) {
+  this.serve_data(200, { "Content-Type": "text/html" }, html);
+};
 
 // Serve a regular file from the root directory
 transaction.serve_local_file = function (filename, stats) {
   var stream = fs.createReadStream(filename);
-  stream.on("error", this.plain_status.bind(this, 500));
+  stream.on("error", this.serve_error.bind(this, 500));
   stream.on("open", function (fd) {
     this.response.writeHead(200, exports.head_params({
       "Content-Length": stats.size,
@@ -221,7 +221,7 @@ transaction.serve_index = function (dirname, stats) {
 
 transaction.serve_directory = function () {
   console.info("  directory: forbidden");
-  this.plain_status(403);
+  this.serve_error(403);
 };
 
 transaction.serve_static_path = function (pathname) {
@@ -229,7 +229,7 @@ transaction.serve_static_path = function (pathname) {
         decodeURIComponent(pathname || this.url.pathname)));
   if (filename.indexOf(this.root) !== 0) {
     console.info("  not rooted: forbidden");
-    return this.plain_status(403);
+    return this.serve_error(403);
   }
   exports.promisify(fs.lstat, filename).then(function (stats) {
     if (stats.isFile()) {
@@ -239,16 +239,17 @@ transaction.serve_static_path = function (pathname) {
     } else if (stats.isSymbolicLink()) {
       this.serve_symbolic_link(filename, stats);
     } else {
-      this.plain_status(403);
+      this.serve_error(403);
     }
   }.bind(this), function () {
-    this.plain_status(404);
+    util.log("[404] serve_static_path: %0".fmt(filename));
+    this.serve_error(404);
   }.bind(this));
 }
 
 transaction.serve_symbolic_link = function () {
   console.info("  symbolic link: forbidden");
-  this.plain_status(403);
+  this.serve_error(403);
 };
 
 
@@ -272,13 +273,13 @@ function get_args(argv, args) {
   return args;
 }
 
-// Find first IP address that is not localhost, or failing that, localhost
+// Find first IP(v4) address that is not localhost, or failing that, localhost.
 function get_first_ip_address() {
-  var ip = "127.1";
+  var ip = "127.0.0.1";
   flexo.find_first(flexo.values(require("os").networkInterfaces()),
       function (if_) {
         return flexo.find_first(if_, function (a) {
-          if (a.family === "IPv4" && a.address !== "127.0.0.1") {
+          if (a.family === "IPv4" && a.address !== ip) {
             ip = a.address;
             return true;
           }
@@ -302,7 +303,7 @@ function html_top(params, head) {
   if (!params.charset) {
     params.charset = "UTF-8";
   }
-  return params.DOCTYPE  + "\n" +
+  return params.DOCTYPE + "\n" +
     flexo.$html({ lang: params.lang },
       flexo.$head(
         flexo.$title(params.title),
@@ -340,8 +341,8 @@ function show_help(node, name) {
   (function load(i, n) {
     if (i === n) {
       exports.create_server(args).then(function (conf) {
-        util.info("Listening at http://%0:%1/".fmt(conf.host, conf.port));
-        util.info("Document root: %0".fmt(conf.documents));
+        util.log("Listening at http://%0:%1/".fmt(conf.host, conf.port));
+        util.log("Document root: %0".fmt(conf.documents));
       }, function (reason) {
         console.error("Could not create server: %0".fmt(reason));
       });

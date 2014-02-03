@@ -14,6 +14,8 @@ exports.init = function (morbo) {
           if (stat.isDirectory()) {
             filename += "/";
             a["class"] = "dir";
+          } else if (stat.isSymbolicLink()) {
+            a["class"] = "link";
           }
           a.href = filename; // path.relative(this.root, filepath);
           return flexo.$li(flexo.$a(a, filename));
@@ -23,20 +25,18 @@ exports.init = function (morbo) {
       files.unshift(flexo.$li(flexo.$a({ "class": "dir", href: "../" },
             "parent directory")));
       var relative = path.relative(this.root, dirname);
-      var data = morbo.html({ title: "Directory listing of %0/".fmt(relative) },
+      this.serve_html(morbo.html({ title: "Directory listing of %0/"
+        .fmt(relative) },
         flexo.$style(
           flexo.css("body", { "font-family": "Univers, Avenir, sans-serif" }),
           flexo.css("a", { "text-decoration": "none", color: "#ff4040" }),
           flexo.css("ul", { "list-style-type": "none", padding: 0 }),
-          flexo.css(".dir", { "font-weight": "bold" })),
-        flexo.$ul(files.join("")));
-      this.response.writeHead(200,
-        morbo.head_params({ "Content-Type": "text/html" }, data));
-      this.response.write(data);
-      this.response.end();
+          flexo.css(".dir", { "font-weight": "bold" }),
+          flexo.css(".link", { "font-style": "italic" })),
+        flexo.$ul(files.join(""))));
     }.bind(this)).then(flexo.nop, function (err) {
       console.log(err);
-      this.plain_status(500);
+      this.serve_error(500);
     }.bind(this));
   };
 };
