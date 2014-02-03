@@ -115,6 +115,16 @@ transaction.get_data = function () {
   return promise;
 };
 
+// Get the local path for an URL path
+transaction.local_path = function (pathname) {
+  var filename = path.normalize(path.join(this.root,
+        decodeURIComponent(pathname || this.url.pathname)));
+  if (filename.indexOf(this.root) !== 0) {
+    throw "not rooted";
+  }
+  return filename;
+};
+
 // Send a text/plain status response
 transaction.plain_status = function (status) {
   var text = status.toString();
@@ -128,8 +138,10 @@ transaction.plain_status = function (status) {
   this.response.end();
 };
 
-transaction.route = function () {
-  var pathname = decodeURIComponent(this.url.pathname);
+transaction.route = function (pathname) {
+  if (!pathname) {
+    pathname = decodeURIComponent(this.url.pathname);
+  }
   var method = this.request.method.toUpperCase();
   util.log("%0 %1".fmt(method, pathname));
   if (method === "HEAD") {
@@ -225,26 +237,26 @@ transaction.serve_directory = function () {
 };
 
 transaction.serve_static_path = function (pathname) {
-  var filename = path.normalize(path.join(this.root,
-        decodeURIComponent(pathname || this.url.pathname)));
-  if (filename.indexOf(this.root) !== 0) {
+  try {
+    var filename = this.local_path(pathname);
+    exports.promisify(fs.lstat, filename).then(function (stats) {
+      if (stats.isFile()) {
+        this.serve_local_file(filename, stats);
+      } else if (stats.isDirectory()) {
+        this.serve_index(filename, stats);
+      } else if (stats.isSymbolicLink()) {
+        this.serve_symbolic_link(filename, stats);
+      } else {
+        this.serve_error(403);
+      }
+    }.bind(this), function () {
+      util.log("[404] serve_static_path: %0".fmt(filename));
+      this.serve_error(404);
+    }.bind(this));
+  } catch (e) {
     console.info("  not rooted: forbidden");
     return this.serve_error(403);
   }
-  exports.promisify(fs.lstat, filename).then(function (stats) {
-    if (stats.isFile()) {
-      this.serve_local_file(filename, stats);
-    } else if (stats.isDirectory()) {
-      this.serve_index(filename, stats);
-    } else if (stats.isSymbolicLink()) {
-      this.serve_symbolic_link(filename, stats);
-    } else {
-      this.serve_error(403);
-    }
-  }.bind(this), function () {
-    util.log("[404] serve_static_path: %0".fmt(filename));
-    this.serve_error(404);
-  }.bind(this));
 }
 
 transaction.serve_symbolic_link = function () {
@@ -350,7 +362,6 @@ function show_help(node, name) {
       var appname = args.apps[i];
       util.log("App: %0 (%1)".fmt(appname, require.resolve(appname)));
       var app = require(appname);
-      flexo.unshift_all(exports.routes, app.routes);
       if (typeof app.init === "function") {
         var p = app.init(exports, argv);
         if (p && p.then) {
@@ -359,6 +370,7 @@ function show_help(node, name) {
           });
         }
       }
+      flexo.unshift_all(exports.routes, app.routes);
       load(i + 1, n);
     }
   }(0, args.apps.length));
