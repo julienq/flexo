@@ -236,9 +236,11 @@ transaction.serve_directory = function () {
   this.serve_error(403);
 };
 
-transaction.serve_static_path = function (pathname) {
+transaction.serve_static_path = function (pathname, filename) {
   try {
-    var filename = this.local_path(pathname);
+    if (!filename) {
+      filename = this.local_path(pathname);
+    }
     exports.promisify(fs.lstat, filename).then(function (stats) {
       if (stats.isFile()) {
         this.serve_local_file(filename, stats);
@@ -259,6 +261,9 @@ transaction.serve_static_path = function (pathname) {
   }
 }
 
+// Disable symbolic links by default.
+// TODO check all path for symbolic links—this only works if the last file or
+// directory is a link!
 transaction.serve_symbolic_link = function () {
   console.info("  symbolic link: forbidden");
   this.serve_error(403);
