@@ -21,9 +21,12 @@ exports.init = function (morbo) {
       var a = {};
       if (stat.isDirectory()) {
         filename += "/";
-        a["class"] = "dir";
+        a.class = "dir";
       } else if (stat.isSymbolicLink()) {
-        a["class"] = "link";
+        a.class = "link";
+      }
+      if (filename[0] === ".") {
+        a.class = (a.class ? a.class + " " : "") + "dot";
       }
       a.href = filename;
       return flexo.$li(flexo.$a(a, filename));
@@ -36,6 +39,7 @@ exports.init = function (morbo) {
         flexo.css("a", { "text-decoration": "none", color: "#ff4040" }),
         flexo.css("h1", { "font-weight": "normal" }),
         flexo.css("ul", { "list-style-type": "none", padding: 0 }),
+        flexo.css(".dot", { "opacity": 0.5 }),
         flexo.css(".dir", { "font-weight": "bold" }),
         flexo.css(".link", { "font-style": "italic" })
       ];

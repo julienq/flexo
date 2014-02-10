@@ -365,6 +365,16 @@
     }
   }
 
+  promise.when = function (f) {
+    f(promise.fulfill.bind(this), promise.reject.bind(this));
+    return this;
+  };
+
+  promise.unless = function (f) {
+    f(promise.reject.bind(this), promise.fulfill.bind(this));
+    return this;
+  };
+
   promise.timeout = function (dur_ms) {
     if (this.__timeout) {
       global.clearTimeout(this.__timeout);
@@ -460,14 +470,14 @@
   // [#x10000-#xEFFFF] since I am not sure that Javascript can deal with those
   // anyway?)
   flexo.check_xml_id = function (id) {
-    var NAME_START = ":A-Z_a-z\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u02ff\u0370" +
+    var name_start = ":A-Z_a-z\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u02ff\u0370" +
       "\u037d\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef" +
       "\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd";
-    var NAME_CONT = "\\-.0-9\u00b7\u0300-\u036f\u203f-\u2040";
-    var ID_RX = new RegExp("^[%0][%0%1]*$".fmt(NAME_START, NAME_CONT));
+    var name_cont = "\\-.0-9\u00b7\u0300-\u036f\u203f-\u2040";
+    var id_rx = new RegExp("^[%0][%0%1]*$".fmt(name_start, name_cont));
     id = flexo.safe_trim(id);
     if (id !== "") {
-      var m = id.match(ID_RX);
+      var m = id.match(id_rx);
       return m && m[0];
     }
     return "";
@@ -653,19 +663,27 @@
 
   // Call f for each node in the tree rooted at x in breadth-first order (TODO:
   // depth-first); f should then return the children of x.
-  flexo.beach = function (x, f) {
-    var queue = [x];
+  flexo.beach = function (x, f, that) {
+    return flexo.beach_all([x], f, that);
+  };
+
+  // Same as beach but start with an initial queue.
+  flexo.beach_all = function (queue, f, that) {
     for (var i = 0; i < queue.length; ++i) {
-      flexo.push_all(queue, f(queue[i]));
+      flexo.push_all(queue, f.call(that, queue[i]));
     }
   };
 
   // Breadth-first search the tree rooted at x for the y such that f(y) is true.
   // f should return true, or the list of children of y.
-  flexo.bfirst = function (x, f) {
-    var queue = [x];
+  flexo.bfirst = function (x, f, that) {
+    return flexo.bfirst_all([x], f, that);
+  };
+
+  // Same as bfirst but start with an initial queue.
+  flexo.bfirst_all = function (queue, f, that) {
     for (var i = 0; i < queue.length; ++i) {
-      var q = f(queue[i]);
+      var q = f.call(that, queue[i]);
       if (q === true) {
         return queue[i];
       }
