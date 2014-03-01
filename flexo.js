@@ -661,14 +661,28 @@
     return z;
   };
 
+  // Same as bfold but start with an initial queue.
+  flexo.bfold_all = function (queue, f, g, z) {
+    var queue = queue.slice();
+    for (var i = 0; i < queue.length; ++i) {
+      z = f(z, queue[i]);
+      flexo.push_all(queue, g(queue[i]));
+    }
+    return z;
+  };
+
   // Call f for each node in the tree rooted at x in breadth-first order (TODO:
   // depth-first); f should then return the children of x.
   flexo.beach = function (x, f, that) {
-    return flexo.beach_all([x], f, that);
+    var queue = [x];
+    for (var i = 0; i < queue.length; ++i) {
+      flexo.push_all(queue, f.call(that, queue[i]));
+    }
   };
 
   // Same as beach but start with an initial queue.
   flexo.beach_all = function (queue, f, that) {
+    queue = queue.splice();
     for (var i = 0; i < queue.length; ++i) {
       flexo.push_all(queue, f.call(that, queue[i]));
     }
@@ -677,11 +691,19 @@
   // Breadth-first search the tree rooted at x for the y such that f(y) is true.
   // f should return true, or the list of children of y.
   flexo.bfirst = function (x, f, that) {
-    return flexo.bfirst_all([x], f, that);
+    var queue = [x];
+    for (var i = 0; i < queue.length; ++i) {
+      var q = f.call(that, queue[i]);
+      if (q === true) {
+        return queue[i];
+      }
+      flexo.push_all(queue, q);
+    }
   };
 
   // Same as bfirst but start with an initial queue.
   flexo.bfirst_all = function (queue, f, that) {
+    queue = queue.slice();
     for (var i = 0; i < queue.length; ++i) {
       var q = f.call(that, queue[i]);
       if (q === true) {
