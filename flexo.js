@@ -682,7 +682,7 @@
 
   // Same as beach but start with an initial queue.
   flexo.beach_all = function (queue, f, that) {
-    queue = queue.splice();
+    queue = queue.slice();
     for (var i = 0; i < queue.length; ++i) {
       flexo.push_all(queue, f.call(that, queue[i]));
     }
