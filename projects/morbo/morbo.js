@@ -196,9 +196,10 @@ transaction.serve_error = function (code) {
       "%0 %1\n".fmt(code, msg));
 };
 
-// Serve generated HTML
-transaction.serve_html = function (html) {
-  this.serve_data(200, { "Content-Type": "text/html" }, html);
+// Serve generated HTML with an optional status code (for custom error pages)
+// defaulting to 200.
+transaction.serve_html = function (html, code) {
+  this.serve_data(code || 200, { "Content-Type": "text/html" }, html);
 };
 
 // Serve a regular file from the root directory
