@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Flexo Sketchbook — Fri 7 Mar 2014: Color Picker</title>
+    <title>Flexo Sketchbook — Fri 7 Mar 2014: HSV Color Picker</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="../sketch.css">
     <script src="../../flexo.js"></script>
@@ -13,15 +13,16 @@ canvas {
 td {
   padding: 0.1em;
 }
-input {
+input, #hex {
   width: 4em;
   padding: 0.1em;
-  background-color: #f8f9f0;
+  background-color: transparent;
+  color: #f8f9f0;
   border: none;
   text-align: right;
 }
 table, input {
-  font-size: 24pt;
+  font-size: 36pt;
   font-family: "Avenir Next", FreeUniversal, "Helvetica Neue", Helvetica,
     sans-serif;
 }
@@ -112,13 +113,14 @@ void main() {
           <td><input type="text" id="v-in"></td>
         </tr>
         <tr>
-          <td id="color"/>
-          <td><input type="text" id="hex"></td>
+          <td id="color"></td>
+          <td id="hex"></td>
         </tr>
       </tbody>
     </table>
     <footer>
-      Fri 7 Mar 2014, from the <a href="../">Flexo sketchbook</a>.<br>
+      Scroll in the color picker to change the value.<br>
+      Fri 7 Mar 2014, from the <a href="../index.html#mar2014">Flexo sketchbook</a>.<br>
       Check out the code <a href="https://github.com/julienq/flexo/tree/master/sketchbook/20140307-pick">on Github</a>!
     </footer>
     <script src="pick.js"></script>
