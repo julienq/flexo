@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Fri 7 Mar 2014: Color Picker</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../../flexo.js"></script>
+    <style>
+footer {
+  font-size: small;
+  text-align: right;
+  position: absolute;
+  margin: 0;
+  bottom: 1rem;
+  right: 1rem;
+}
+    </style>
+    <script id="vs" type="x-shader/x-vertex">
+attribute vec2 a_position;
+varying vec2 v_position;
+
+void main() {
+  gl_Position = vec4(a_position, 0, 1);
+  v_position = a_position;
+}
+    </script>
+    <script id="fs" type="x-shader/x-fragment">
+precision mediump float;
+
+uniform float v;
+varying vec2 v_position;
+
+#define pi 3.141592653589793
+
+vec4 hsva_to_rgba(vec4 hsva) {
+  float c = hsva.y * hsva.z;
+  float h_ = hsva.x / 60.0;
+  float x = c * (1.0 - abs(mod(h_, 2.0) - 1.0));
+  float r = 0.0;
+  float g = 0.0;
+  float b = 0.0;
+  if (h_ < 1.0) {
+    r = c;
+    g = x;
+  } else if (h_ < 2.0) {
+    r = x;
+    g = c;
+  } else if (h_ < 3.0) {
+    g = c;
+    b = x;
+  } else if (h_ < 4.0) {
+    g = x;
+    b = c;
+  } else if (h_ < 5.0) {
+    r = x;
+    b = c;
+  } else {
+    r = c;
+    b = x;
+  }
+  float m = hsva.z - c;
+  return vec4(r + m, g + m, b + m, 1.0);
+}
+
+void main() {
+  float h = (pi - atan(v_position.y, -v_position.x)) * 180.0 / pi;
+  float s = distance(v_position, vec2(0, 0));
+  gl_FragColor = s <= 1.0 ? hsva_to_rgba(vec4(h, s, v, 1.0)) :
+    vec4(0.0, 0.0, 0.0, 0.0);
+}
+    </script>
+  </head>
+  <body class="full dark">
+    <canvas width="800" height="800"></canvas>
+    <footer>
+      Fri 7 Mar 2014, from the <a href="../">Flexo sketchbook</a>.<br>
+      Check out the code <a href="https://github.com/julienq/flexo/tree/master/sketchbook/20140109-poly">on Github</a>!
+    </footer>
+    <script src="pick.js"></script>
+  </body>
+</html>
+
