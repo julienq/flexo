@@ -3,38 +3,34 @@
 
   /* global exports, global, window, π */
   var browserp = typeof window === "object";
-  var global_ = browserp ? window : typeof global === "object" ? global :
-    (function () { return this; }());
-  var flexo = typeof exports === "object" ? exports : global_.flexo = {};
-  flexo.global = global_;
+  if (browserp) {
+    window.global = window;
+  }
+  var flexo = typeof exports === "object" ? exports : global.flexo = {};
 
-  flexo.VERSION = "0.3.0";
+  flexo.VERSION = "0.4.0";
+  flexo.global = global;
+  flexo.browserp = browserp;
 
-  // Make free-standing versions of array functions to work on array-like
-  // objects.
-  global_.$call = Function.prototype.call;
-  global_.$apply = Function.prototype.apply;
-  global_.$bind = $call.bind(Function.prototype.bind);
-  "filter forEach map push slice splice unshift".split(" ")
-    .forEach(function (f) {
-      global_["$" + f.toLowerCase()] = $call.bind(Array.prototype[f]);
-    });
-  "push unshift".split(" ").forEach(function (f) {
-    global_["$$" + f.toLowerCase()] = $apply.bind(Array.prototype[f]);
-  });
-
-  // Define π as a global
-  global_.π = Math.PI;
-  global_._2π = 2 * Math.PI;
+  // Define π and 2π as a global
+  global.π = Math.PI;
+  global._2π = 2 * Math.PI;
 
 
   // Pseudo-macros
 
-  // Pseudo-macro for prototype inheritance
-  flexo._class = function (constructor, Proto) {
-    var p = constructor.prototype = new Proto();
-    Object.defineProperty(p, "constructor", { value: constructor });
-    return p;
+  // Create a new object from a prototype and extend it with zero or more
+  // objects (not overwriting properties that have just been added.)
+  flexo._ext = function (prototype) {
+    var object = Object.create(prototype);
+    for (var i = 1, n = arguments.length; i < n; ++i) {
+      for (var p in arguments[i]) {
+        if (!object.hasOwnProperty(p)) {
+          object[p] = arguments[i][p];
+        }
+      }
+    }
+    return object;
   };
 
   // Make an accessor for a property. The accessor can be called with no
@@ -44,21 +40,23 @@
   // The default_value parameter may be a function, in which case it used to
   // normalize the input value and generate the default value from an undefined
   // value (e.g., cf. normalize_*.)
-  flexo._accessor = function (object, name, default_value) {
+  // Set the default_function flag if the default value is a function itself.
+  flexo._accessor = function (object, name, default_value, default_function) {
     var property = "_" + name;
-    object.prototype[name] = typeof default_value === "function" ?
+    (object.prototype || object)[name] =
+      typeof default_value === "function" && !default_function ?
       function (value) {
         if (arguments.length > 0) {
-          this[property] = default_value(value);
+          this[property] = default_value.call(this, value);
           return this;
         }
-        return this.hasOwnProperty(property) ? this[property] : default_value();
+        return property in this ? this[property] : default_value.call(this);
       } : function (value) {
         if (arguments.length > 0) {
           this[property] = value;
           return this;
         }
-        return this.hasOwnProperty(property) ? this[property] : default_value;
+        return property in this ? this[property] : default_value;
       };
   };
 
@@ -74,16 +72,6 @@
       return p === "%" ? "%" : args[p_] == null ? "" : args[p_];
     });
   };
-
-  if (typeof Function.prototype.bind !== "function") {
-    Function.prototype.bind = function (x) {
-      var f = this;
-      var args = $slice(arguments, 1);
-      return function () {
-        return f.apply(x, args.concat($slice(arguments)));
-      };
-    };
-  }
 
   // requestAnimationFrame
   if (browserp && !window.requestAnimationFrame) {
@@ -114,6 +102,7 @@
   flexo.make_readonly = function (obj, name, get) {
     Object.defineProperty(obj, name, {
       enumerable: true,
+      configurable: true,
       get: flexo.funcify(get)
     });
   };
@@ -145,11 +134,354 @@
     if (obj == null) {
       return "";
     }
-    return obj.toString.apply(obj, $slice(arguments, 1));
+    return obj.toString.apply(obj, flexo.slice(arguments, 1));
+  };
+
+
+  // Functions and Asynchronicity
+
+  // Hack using postMessage to provide a setImmediate replacement; inspired by
+  // https://github.com/NobleJS/setImmediate
+  flexo.asap = global.setImmediate ? global.setImmediate.bind(global) :
+    global.postMessage ? (function () {
+      var queue = [];
+      var key = "asap{0}".fmt(Math.random());
+      global.addEventListener("message", function (e) {
+        if (e.data === key) {
+          var q = queue.slice();
+          queue = [];
+          for (var i = 0, n = q.length; i < n; ++i) {
+            var f = q[i];
+            f();
+          }
+        }
+      }, false);
+      return function (f) {
+        if (typeof f !== "function") {
+          throw "Not a function: %0".fmt(f);
+        }
+        queue.push(f);
+        global.postMessage(key, "*");
+      };
+    }()) : function (f) {
+      global.setTimeout(f, 0);
+    };
+
+  // Return a function that discards its arguments. An optional parameter allows
+  // to keep at most n arguments (defaults to 0 of course.)
+  flexo.discard = function (f, n) {
+    return function () {
+      return f.apply(this, flexo.slice(arguments, 0, n || 0));
+    };
+  };
+
+  // This function can be called to fail early. If called with no parameter or a
+  // single parameter evaluating to a truthy value, throw a "fail" exception;
+  // otherwise, return false.
+  flexo.fail = function (p) {
+    if (!arguments.length || p) {
+      throw "fail";
+    }
+    return false;
+  };
+
+  // Turn a value into a 0-ary function returning that value
+  flexo.funcify = function (x) {
+    return typeof x === "function" ? x : function () {
+      return x;
+    };
+  };
+
+  // Identity function (also named `fst` to match `snd`)
+  flexo.id = flexo.fst = function (x) {
+    return x;
+  };
+
+  // Get a function that returns the property `property` of an object.
+  flexo.property = function (p1, p2) {
+    return arguments.length === 1 ?
+      function (x) {
+        return x && x[p1];
+      } : function (x) {
+        return x && x[p1] && x[p1][p2];
+      };
+  };
+
+  // A function that returns its second argument and discard the first.
+  flexo.snd = function (_, y) {
+    // jshint unused: true
+    return y;
+  };
+
+  // Sort of like id, but for `this`.
+  flexo.self = function () {
+    return this;
+  };
+
+  // No-op function, returns nothing
+  flexo.nop = function () {
+  };
+
+
+  // Promises (see http://promisesaplus.com/)
+  var promise = (flexo.Promise = function () {
+    this.pending = true;
+    Object.defineProperty(this, "queue", { value: [], writable: true });
+  }).prototype;
+
+  promise.fulfill = function (value) {
+    if (!this.pending && arguments.length === 1) {
+      return this;
+    }
+    if (arguments.length === 1) {
+      delete this.pending;
+      Object.defineProperty(this, "value", { value: value, enumerable: true });
+    }
+    var queue = this.queue;
+    this.queue = [];
+    var promise1 = this;
+    flexo.asap(function () {
+      queue.forEach(function (q) {
+        promise.fulfill_.apply(promise1, q);
+      });
+    });
+    return this;
+  };
+
+  promise.fulfill_ = function (promise2, onFulfilled) {
+    if (typeof onFulfilled === "function") {
+      try {
+        resolve_promise(promise2, onFulfilled(this.value));
+      } catch (e) {
+        promise2.reject(e);
+      }
+    } else {
+      promise2.fulfill(this.value);
+    }
+  };
+
+  promise.reject = function (reason) {
+    if (!this.pending && arguments.length === 1) {
+      return this;
+    }
+    if (arguments.length === 1) {
+      delete this.pending;
+      Object.defineProperty(this, "reason",
+          { value: reason, enumerable: true });
+    }
+    var queue = this.queue;
+    this.queue = [];
+    var promise1 = this;
+    flexo.asap(function () {
+      queue.forEach(function (q) {
+        promise.reject_.apply(promise1, q);
+      });
+    });
+    return this;
+  };
+
+  promise.reject_ = function (promise2, _, onRejected) {
+    // jshint unused: true
+    if (typeof onRejected === "function") {
+      try {
+        resolve_promise(promise2, onRejected(this.reason));
+      } catch (e) {
+        promise2.reject(e);
+      }
+    } else {
+      promise2.reject(this.reason);
+    }
+  };
+
+  promise.then = function (onFulfilled, onRejected) {
+    var promise2 = new flexo.Promise();
+    if (this.pending) {
+      this.queue.push([promise2, onFulfilled, onRejected]);
+    } else {
+      var promise1 = this;
+      if (this.hasOwnProperty("value")) {
+        flexo.asap(function () {
+          promise1.fulfill_(promise2, onFulfilled, onRejected);
+        });
+      } else {
+        flexo.asap(function () {
+          promise1.reject_(promise2, onFulfilled, onRejected);
+        });
+      }
+    }
+    return promise2;
+  };
+
+  function resolve_promise(promise, x) {
+    if (promise === x) {
+      // throw new TypeError();
+      promise.reject(new TypeError());
+    }
+    if (x instanceof flexo.Promise) {
+      if (x.pending) {
+        x.queue.push([promise, function (value) {
+          return promise.fulfill(value);
+        }, function (reason) {
+          return promise.reject(reason);
+        }]);
+      } else if (x.hasOwnProperty("value")) {
+        promise.fulfill(x.value);
+      } else {
+        promise.reject(x.reason);
+      }
+    } else if (x !== null && typeof x === "object" || typeof x === "function") {
+      try {
+        var then = x.then;
+        if (typeof then === "function") {
+          (function () {
+            var handled = false;
+            try {
+              then.call(x, function (y) {
+                if (!handled) {
+                  handled = true;
+                  resolve_promise(promise, y);
+                }
+              }, function (r) {
+                if (!handled) {
+                  handled = true;
+                  promise.reject(r);
+                }
+              });
+            } catch (e) {
+              if (!handled) {
+                handled = true;
+                promise.reject(e);
+              }
+            }
+          }());
+        } else {
+          promise.fulfill(x);
+        }
+      } catch (e) {
+        promise.reject(e);
+      }
+    } else {
+      promise.fulfill(x);
+    }
+  }
+
+  promise.when = function (f) {
+    f(promise.fulfill.bind(this), promise.reject.bind(this));
+    return this;
+  };
+
+  promise.unless = function (f) {
+    f(promise.reject.bind(this), promise.fulfill.bind(this));
+    return this;
+  };
+
+  promise.timeout = function (dur_ms) {
+    if (this.__timeout) {
+      global.clearTimeout(this.__timeout);
+      delete this.__timeout;
+    }
+    if (dur_ms > 0) {
+      this.__timeout = global.setTimeout(this.reject.bind(this, "Timeout"),
+          dur_ms);
+    }
+    return this;
+  };
+
+
+  // Fold for a list of promises.
+  flexo.fold_promises = function (promises, f, z) {
+    return (function fold (i, n) {
+      if (i === n) {
+        return new flexo.Promise().fulfill(z);
+      }
+      if (promises[i] instanceof flexo.Promise) {
+        return promises[i].then(function (value) {
+          z = f(z, value);
+          return fold(i + 1, n);
+        });
+      }
+      z = f(z, promises[i]);
+      return fold(i + 1, n);
+    }(0, promises.length));
+  };
+
+  // Collect a list of promises into a promise of a list.
+  flexo.collect_promises = function (promises) {
+    return flexo.fold_promises(promises, function (values, value) {
+      values.push(value);
+      return values;
+    }, []);
+  };
+
+  // Delay the execution of `f` by `delay_ms` millisecond (or 0 if the delay is
+  // negative or not a number.)
+  flexo.promise_delay = function (f, delay_ms) {
+    var promise = new flexo.Promise();
+    global.setTimeout(function () {
+      promise.fulfill(flexo.funcify(f)());
+    }, delay_ms > 0 ? delay_ms : 0);
+    return promise;
+  };
+
+  // Create a promise that loads an image. `attrs` is a dictionary of attribute
+  // for the image and should contain a `src` property, or can simply be the
+  // source attribute value itself. The promise has a pointer to the `img`
+  // element.
+  flexo.promise_img = function (attrs) {
+    var promise = new flexo.Promise();
+    var img = promise.img = new window.Image();
+    if (typeof attrs === "object") {
+      for (var attr in attrs) {
+        img.setAttribute(attr, attrs[attr]);
+      }
+    } else {
+      img.src = attrs;
+    }
+    if (img.complete) {
+      promise.fulfill(img);
+    } else {
+      img.onload = function () {
+        promise.fulfill(img);
+      };
+      img.onerror = promise.reject.bind(promise);
+    }
+    return promise;
+  };
+
+  // Create a promise that loads a script at `src` by adding it to `target`.
+  flexo.promise_script = function (src, target) {
+    var promise = new flexo.Promise();
+    var script = target.ownerDocument.createElement("script");
+    script.src = src;
+    script.async = false;
+    script.onload = promise.fulfill.bind(promise, script);
+    script.onerror = promise.reject.bind(promise);
+    target.appendChild(script);
+    return promise;
   };
 
 
   // Strings
+
+  // Check the validity of an XML id string after whitespace trimming, and
+  // return the trimmed ID, the empty string if there was no non-space
+  // characters in the original string, or null if the ID was invalid. Cf.
+  // http://www.w3.org/TR/xml11/#sec-common-syn, rules 4 and 4a (also we skip
+  // [#x10000-#xEFFFF] since I am not sure that Javascript can deal with those
+  // anyway?)
+  flexo.check_xml_id = function (id) {
+    var name_start = ":A-Z_a-z\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u02ff\u0370" +
+      "\u037d\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef" +
+      "\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd";
+    var name_cont = "\\-.0-9\u00b7\u0300-\u036f\u203f-\u2040";
+    var id_rx = new RegExp("^[%0][%0%1]*$".fmt(name_start, name_cont));
+    id = flexo.safe_trim(id);
+    if (id !== "") {
+      var m = id.match(id_rx);
+      return m && m[0];
+    }
+    return "";
+  };
 
   // Chop the last character of a string iff it's a newline
   flexo.chomp = function (string) {
@@ -242,6 +574,11 @@
     }
   };
 
+  // Convert the first character of a string to uppercase (using toUpperCase)
+  flexo.ucfirst = function (s) {
+    return s === "" ? s : s[0].toUpperCase() + s.substr(1);
+  };
+
   // Convert a string with dash to camel case: remove dashes and capitalize the
   // following letter (e.g., convert foo-bar to fooBar)
   flexo.undash = function (s) {
@@ -292,6 +629,19 @@
 
   // Arrays
 
+  // Make free-standing versions of array functions to work on array-like
+  // objects.
+  flexo.call = Function.prototype.call;
+  flexo.apply = Function.prototype.apply;
+  flexo.bind = flexo.call.bind(Function.prototype.bind);
+  "filter forEach map push slice splice unshift".split(" ")
+    .forEach(function (f) {
+      flexo[f.toLowerCase()] = flexo.call.bind(Array.prototype[f]);
+    });
+  "push unshift".split(" ").forEach(function (f) {
+    flexo[f + "_all"] = flexo.apply.bind(Array.prototype[f]);
+  });
+
   // Return a new array without the given item
   flexo.array_without = function (array, item) {
     var a = array.slice();
@@ -299,13 +649,77 @@
     return a;
   };
 
+  // Fold a tree-structure, breadth-first (TODO: depth-first) from the root x.
+  // Update the result z by calling f(z, y), where y is x or a descendant of x.
+  // Then get the children of y by calling g(y).
+  flexo.bfold = function (x, f, g, z) {
+    var queue = [x];
+    for (var i = 0; i < queue.length; ++i) {
+      z = f(z, queue[i]);
+      flexo.push_all(queue, g(queue[i]));
+    }
+    return z;
+  };
+
+  // Same as bfold but start with an initial queue.
+  flexo.bfold_all = function (queue, f, g, z) {
+    var queue = queue.slice();
+    for (var i = 0; i < queue.length; ++i) {
+      z = f(z, queue[i]);
+      flexo.push_all(queue, g(queue[i]));
+    }
+    return z;
+  };
+
+  // Call f for each node in the tree rooted at x in breadth-first order (TODO:
+  // depth-first); f should then return the children of x.
+  flexo.beach = function (x, f, that) {
+    var queue = [x];
+    for (var i = 0; i < queue.length; ++i) {
+      flexo.push_all(queue, f.call(that, queue[i]));
+    }
+  };
+
+  // Same as beach but start with an initial queue.
+  flexo.beach_all = function (queue, f, that) {
+    queue = queue.slice();
+    for (var i = 0; i < queue.length; ++i) {
+      flexo.push_all(queue, f.call(that, queue[i]));
+    }
+  };
+
+  // Breadth-first search the tree rooted at x for the y such that f(y) is true.
+  // f should return true, or the list of children of y.
+  flexo.bfirst = function (x, f, that) {
+    var queue = [x];
+    for (var i = 0; i < queue.length; ++i) {
+      var q = f.call(that, queue[i]);
+      if (q === true) {
+        return queue[i];
+      }
+      flexo.push_all(queue, q);
+    }
+  };
+
+  // Same as bfirst but start with an initial queue.
+  flexo.bfirst_all = function (queue, f, that) {
+    queue = queue.slice();
+    for (var i = 0; i < queue.length; ++i) {
+      var q = f.call(that, queue[i]);
+      if (q === true) {
+        return queue[i];
+      }
+      flexo.push_all(queue, q);
+    }
+  };
+
   flexo.extract_from_array = function (array, p, that) {
     var extracted = [];
-    var original = $slice(array);
+    var original = flexo.slice(array);
     for (var i = array.length - 1; i >= 0; --i) {
       if (p.call(that, array[i], i, original)) {
         extracted.unshift(array[i]);
-        $splice(array, i, 1);
+        flexo.splice(array, i, 1);
       }
     }
     return extracted;
@@ -314,12 +728,12 @@
   // Drop elements of an array while the predicate is true
   flexo.drop_while = function (a, p, that) {
     for (var i = 0, n = a.length; i < n && p.call(that, a[i], i, a); ++i) {}
-    return $slice(a, i);
+    return flexo.slice(a, i);
   };
 
   flexo.is_array_like = function (a) {
     return Array.isArray(a) || (a && typeof a.length === "number");
-  }
+  };
 
   // Find the first item x in a such that p(x) is true
   flexo.find_first = function (a, p, that) {
@@ -337,7 +751,7 @@
     }
   };
 
-  // Interspers the separator `sep` in the array a
+  // Intersperse the separator `sep` in the array a. Return a new array.
   flexo.intersperse = function (a, sep) {
     var n = a.length;
     if (n === 0) {
@@ -352,7 +766,7 @@
     return j;
   };
 
-  // Partition `a` according to predicate `p` and return and array of two arrays
+  // Partition `a` according to predicate `p` and return an array of two arrays
   // (first one is the array of elements for which p is true.)
   flexo.partition = function (a, p, that) {
     var ins = [];
@@ -404,7 +818,7 @@
   // Shuffle the array into a new array (the original array is not changed and
   // the new, shuffled array is returned.)
   flexo.shuffle_array = function (array) {
-    var shuffled = $slice(array);
+    var shuffled = flexo.slice(array);
     for (var i = shuffled.length - 1; i > 0; --i) {
       var j = flexo.random_int(i);
       var x = shuffled[i];
@@ -426,25 +840,21 @@
 
   // Create a new urn to pick from. The argument is the array of items in the
   // urn; items can be added or removed later.
-  flexo.Urn = function (items) {
-    flexo.make_property(this, "items", function (items_) {
-      this._remaining = [];
-      delete this._last_pick;
-      return items_;
-    });
-    flexo.make_readonly(this, "remaining", function () {
-      return this._remaining.length;
-    });
-    this.items = Array.isArray(items) && items || [];
+  flexo.urn = function (items) {
+    return Object.create(Urn).init(items);
   };
 
-  flexo.Urn.prototype = {
+  var Urn = {
+    init: function (items) {
+      this.items = Array.isArray(items) && items || [];
+      return this;
+    },
 
     // Pick an item from the urn, refilling it as necessary.
     pick: function () {
       var last;
       if (this._remaining.length === 0) {
-        this._remaining = $slice(this.items);
+        this._remaining = flexo.slice(this.items);
         if (this._remaining.length > 1 && this.hasOwnProperty("_last_pick")) {
           last = flexo.remove_from_array(this._remaining, this._last_pick);
         }
@@ -487,8 +897,16 @@
       }
       return removed;
     }
-
   };
+
+  flexo.make_property(Urn, "items", function (items_) {
+    this._remaining = [];
+    delete this._last_pick;
+    return items_;
+  });
+  flexo.make_readonly(Urn, "remaining", function () {
+    return this._remaining.length;
+  });
 
   // Extend the proto object with properties of the ext object. Note that this
   // creates a new object that proto should be replaced with.
@@ -845,334 +1263,12 @@
   };
 
 
-  // Functions and Asynchronicity
-
-  // Hack using postMessage to provide a setImmediate replacement; inspired by
-  // https://github.com/NobleJS/setImmediate
-  flexo.asap = global_.setImmediate ? global_.setImmediate.bind(global_) :
-    global_.postMessage ? (function () {
-      var queue = [];
-      var key = "asap{0}".fmt(Math.random());
-      global_.addEventListener("message", function (e) {
-        if (e.data === key) {
-          var q = queue.slice();
-          queue = [];
-          for (var i = 0, n = q.length; i < n; ++i) {
-            var f = q[i];
-            f();
-          }
-        }
-      }, false);
-      return function (f) {
-        if (typeof f !== "function") {
-          throw "Not a function: %0".fmt(f);
-        }
-        queue.push(f);
-        global_.postMessage(key, "*");
-      };
-    }()) : function (f) {
-      global_.setTimeout(f, 0);
-    };
-
-  // Return a function that discards its arguments. An optional parameter allows
-  // to keep at most n arguments (defaults to 0 of course.)
-  flexo.discard = function (f, n) {
-    return function () {
-      return f.apply(this, $slice(arguments, 0, n || 0));
-    };
-  };
-
-  // This function can be called to fail early. If called with no parameter or a
-  // single parameter evaluating to a truthy value, throw a "fail" exception;
-  // otherwise, return false.
-  flexo.fail = function (p) {
-    if (!arguments.length || p) {
-      throw "fail";
-    }
-    return false;
-  };
-
-  // Turn a value into a 0-ary function returning that value
-  flexo.funcify = function (x) {
-    return typeof x === "function" ? x : function () {
-      return x;
-    };
-  };
-
-  // Identity function (also named `fst` to match `snd`)
-  flexo.id = flexo.fst = function (x) {
-    return x;
-  };
-
-  // A function that returns its second argument and discard the first.
-  flexo.snd = function (_, y) {
-    // jshint unused: true
-    return y;
-  };
-
-  // Sort of like id, but for `this`.
-  flexo.self = function () {
-    return this;
-  };
-
-  // No-op function, returns nothing
-  flexo.nop = function () {
-  };
-
-  // Trampoline calls, adapted from
-  // http://github.com/spencertipping/js-in-ten-minutes
-
-  // Use a trampoline to call a function; we expect a thunk to be returned
-  // through the get_thunk() function below. Return nothing to step off the
-  // trampoline (e.g. to wait for an event before continuing.)
-  function apply_thunk(thunk) {
-    var escape = thunk[1][thunk[1].length - 1];
-    var self = thunk[0];
-    while (thunk && thunk[0] !== escape) {
-      thunk = thunk[0].apply(self, thunk[1]);
-    }
-    if (thunk) {
-      return escape.apply(self, thunk[1]);
-    }
-  }
-
-  Function.prototype.trampoline = function () {
-    return apply_thunk([this, arguments]);
-  };
-
-  // Return a thunk suitable for the trampoline function above.
-  Function.prototype.get_thunk = function() {
-    return [this, arguments];
-  };
-
-
-  // Promises (see http://promisesaplus.com/)
-  var promise = (flexo.Promise = function () {
-    this.pending = true;
-    Object.defineProperty(this, "queue", { value: [], writable: true });
-  }).prototype;
-
-  promise.fulfill = function (value) {
-    if (!this.pending && arguments.length === 1) {
-      return this;
-    }
-    if (arguments.length === 1) {
-      delete this.pending;
-      Object.defineProperty(this, "value", { value: value, enumerable: true });
-    }
-    var queue = this.queue;
-    this.queue = [];
-    var promise1 = this;
-    flexo.asap(function () {
-      queue.forEach(function (q) {
-        promise.fulfill_.apply(promise1, q);
-      });
-    });
-    return this;
-  };
-
-  promise.fulfill_ = function (promise2, onFulfilled, onRejected) {
-    if (typeof onFulfilled === "function") {
-      try {
-        resolve_promise(promise2, onFulfilled(this.value));
-      } catch (e) {
-        promise2.reject(e);
-      }
-    } else {
-      promise2.fulfill(this.value);
-    }
-  };
-
-  promise.reject = function (reason) {
-    if (!this.pending && arguments.length === 1) {
-      return this;
-    }
-    if (arguments.length === 1) {
-      delete this.pending;
-      Object.defineProperty(this, "reason",
-          { value: reason, enumerable: true });
-    }
-    var queue = this.queue;
-    this.queue = [];
-    var promise1 = this;
-    flexo.asap(function () {
-      queue.forEach(function (q) {
-        promise.reject_.apply(promise1, q);
-      });
-    });
-    return this;
-  };
-
-  promise.reject_ = function (promise2, onFulfilled, onRejected) {
-    if (typeof onRejected === "function") {
-      try {
-        resolve_promise(promise2, onRejected(this.reason));
-      } catch (e) {
-        promise2.reject(e);
-      }
-    } else {
-      promise2.reject(this.reason);
-    }
-  };
-
-  promise.then = function (onFulfilled, onRejected) {
-    var promise2 = new flexo.Promise();
-    if (this.pending) {
-      this.queue.push([promise2, onFulfilled, onRejected]);
-    } else {
-      var promise1 = this;
-      if (this.hasOwnProperty("value")) {
-        flexo.asap(function () {
-          promise1.fulfill_(promise2, onFulfilled, onRejected);
-        });
-      } else {
-        flexo.asap(function () {
-          promise1.reject_(promise2, onFulfilled, onRejected);
-        });
-      }
-    }
-    return promise2;
-  };
-
-  function resolve_promise(promise, x) {
-    if (promise === x) {
-      // throw new TypeError();
-      promise.reject(new TypeError());
-    }
-    if (x instanceof flexo.Promise) {
-      if (x.pending) {
-        x.queue.push([promise, function (value) {
-          return promise.fulfill(value);
-        }, function (reason) {
-          return promise.reject(reason);
-        }]);
-      } else if (x.hasOwnProperty("value")) {
-        promise.fulfill(x.value);
-      } else {
-        promise.reject(x.reason);
-      }
-    } else if (x !== null && typeof x === "object" || typeof x === "function") {
-      try {
-        var then = x.then;
-        if (typeof then === "function") {
-          (function () {
-            var handled = false;
-            try {
-              then.call(x, function (y) {
-                if (!handled) {
-                  handled = true;
-                  resolve_promise(promise, y);
-                }
-              }, function (r) {
-                if (!handled) {
-                  handled = true;
-                  promise.reject(r);
-                }
-              });
-            } catch (e) {
-              if (!handled) {
-                handled = true;
-                promise.reject(e);
-              }
-            }
-          }());
-        } else {
-          promise.fulfill(x);
-        }
-      } catch (e) {
-        promise.reject(e);
-      }
-    } else {
-      promise.fulfill(x);
-    }
-  }
-
-  promise.timeout = function (dur_ms) {
-    if (this.__timeout) {
-      global_.clearTimeout(this.__timeout);
-      delete this.__timeout;
-    }
-    if (dur_ms > 0) {
-      this.__timeout = global_.setTimeout(this.reject.bind(this, "Timeout"),
-          dur_ms);
-    }
-    return this;
-  };
-
-  // Fold for a list of promises.
-  flexo.fold_promises = function (promises, f, z) {
-    return (function fold (i, n) {
-      if (i === n) {
-        return new flexo.Promise().fulfill(z);
-      }
-      if (promises[i] instanceof flexo.Promise) {
-        return promises[i].then(function (value) {
-          z = f(z, value);
-          return fold(i + 1, n);
-        });
-      }
-      z = f(z, promises[i]);
-      return fold(i + 1, n);
-    }(0, promises.length));
-  };
-
-  // Collect a list of promises into a promise of a list.
-  flexo.collect_promises = function (promises) {
-    return flexo.fold_promises(promises, function (values, value) {
-      values.push(value);
-      return values;
-    }, []);
-  };
-
-  // Delay the execution of `f` by `delay_ms` millisecond (or 0 if the delay is
-  // negative or not a number.)
-  flexo.promise_delay = function (f, delay_ms) {
-    var promise = new flexo.Promise();
-    global_.setTimeout(function () {
-      promise.fulfill(flexo.funcify(f)());
-    }, delay_ms > 0 ? delay_ms : 0);
-    return promise;
-  };
-
-  // Create a promise that loads an image. `attrs` is a dictionary of attribute
-  // for the image and should contain a `src` property, or can simply be the
-  // source attribute value itself. The promise has a pointer to the `img`
-  // element.
-  flexo.promise_img = function (attrs) {
-    var promise = new flexo.Promise();
-    var img = promise.img = new window.Image();
-    if (typeof attrs === "object") {
-      for (var attr in attrs) {
-        img.setAttribute(attr, attrs[attr]);
-      }
-    } else {
-      img.src = attrs;
-    }
-    if (img.complete) {
-      promise.fulfill(img);
-    } else {
-      img.onload = function () {
-        promise.fulfill(img);
-      };
-      img.onerror = promise.reject.bind(promise);
-    }
-    return promise;
-  };
-
-  // Create a promise that loads a script at `src` by adding it to `target`.
-  flexo.promise_script = function (src, target) {
-    var promise = new flexo.Promise();
-    var script = target.ownerDocument.createElement("script");
-    script.src = src;
-    script.async = false;
-    script.onload = promise.fulfill.bind(promise, script);
-    script.onerror = promise.reject.bind(promise);
-    target.appendChild(script);
-    return promise;
-  };
-
-
   // DOM
+
+  // IE does not support baseURI :(
+  flexo.base_uri = function (node) {
+    return node && (node.baseURI || node.ownerDocument.location.href);
+  };
 
   // Make a (text) HTML tag; the first argument is the tag name. Following
   // arguments are the contents (as text; must be properly escaped.) If the last
@@ -1182,7 +1278,7 @@
   // TODO handle encoding (at least of attribute values)
   flexo.html_tag = function (tag) {
     var out = "<" + tag;
-    var contents = $slice(arguments, 1);
+    var contents = flexo.slice(arguments, 1);
     if (typeof contents[0] === "object" && !Array.isArray(contents[0])) {
       var attrs = contents.shift();
       for (var a in attrs) {
@@ -1204,6 +1300,36 @@
     out += contents.join("");
     if (!keep_open) {
       out += "</%0>".fmt(tag);
+    }
+    return out;
+  };
+
+  // Same as html_tag but output well-formed XML instead
+  flexo.xml_tag = function (tag) {
+    var out = "<" + tag;
+    var contents = flexo.slice(arguments, 1);
+    if (typeof contents[0] === "object" && !Array.isArray(contents[0])) {
+      var attrs = contents.shift();
+      for (var a in attrs) {
+        var v = attrs[a];
+        // jshint -W041
+        if (v != null) {
+          out += " %0=%1".fmt(a, flexo.quote(v));
+        }
+      }
+    }
+    var keep_open = typeof contents[contents.length - 1] === "boolean" ?
+        contents.pop() : false;
+    contents = contents.join("");
+    if (contents) {
+      out += ">" + contents;
+    }
+    if (keep_open) {
+      if (!contents) {
+        out += ">";
+      }
+    } else {
+      out += contents ? "</%0>".fmt(tag) : "/>";
     }
     return out;
   };
@@ -1252,9 +1378,9 @@
     var contents;
     if (typeof attrs === "object" && !(attrs instanceof window.Node) &&
         !Array.isArray(attrs)) {
-      contents = $slice(arguments, 2);
+      contents = flexo.slice(arguments, 2);
     } else {
-      contents = $slice(arguments, 1);
+      contents = flexo.slice(arguments, 1);
       attrs = {};
     }
     var classes = name.trim().split(".").map(function (x) {
@@ -1362,7 +1488,7 @@
       // Shorthand to create a document fragment
       flexo.$$ = function () {
         var fragment = window.document.createDocumentFragment();
-        $foreach(arguments, function (ch) {
+        flexo.foreach(arguments, function (ch) {
           flexo.append_child(fragment, ch);
         });
         return fragment;
@@ -1385,6 +1511,14 @@
       }
     }
   }());
+
+  flexo.css = function (selectors, rules) {
+    return "%0{%1}"
+      .fmt(typeof selectors === "string" ? selectors : selectors.join(", "),
+          Object.keys(rules).map(function (key) {
+            return "%0: %1".fmt(key, rules[key]);
+          }).join("; "));
+  };
 
   // Add node after ref, which of course must be defined.
   flexo.add_after = function (node, ref) {
@@ -1495,7 +1629,7 @@
 
   // Convert an RGB color (3 values in the [0, 256[ interval) to a hex value
   flexo.rgb_to_hex = function () {
-    return "#" + $map(arguments, function (x) {
+    return "#" + flexo.map(arguments, function (x) {
       return flexo.pad(flexo.clamp(Math.floor(x), 0, 255).toString(16), 2);
     }).join("");
   };
@@ -1511,6 +1645,9 @@
   // Get an SVG point for the event in the context of an SVG element (or the
   // closest svg element by default)
   flexo.event_svg_point = function(e, svg) {
+    if (!svg) {
+      svg = flexo.find_svg(e.target);
+    }
     return flexo.svg_point(
         e.targetTouches ? e.targetTouches[0].clientX : e.clientX,
         e.targetTouches ? e.targetTouches[0].clientY : e.clientY,
@@ -1527,9 +1664,8 @@
     p.y = y;
     try {
       return p.matrixTransform(svg.getScreenCTM().inverse());
-    } catch(x) {}
-
-  }
+    } catch(e) {}
+  };
 
   // Find the closest <svg> ancestor for a given element
   flexo.find_svg = function (elem) {
