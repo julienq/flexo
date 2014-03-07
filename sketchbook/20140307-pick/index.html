@@ -6,6 +6,30 @@
     <link rel="stylesheet" href="../sketch.css">
     <script src="../../flexo.js"></script>
     <style>
+canvas {
+  float: left;
+  margin-right: 2em;
+}
+td {
+  padding: 0.1em;
+}
+input {
+  width: 4em;
+  padding: 0.1em;
+  background-color: #f8f9f0;
+  border: none;
+  text-align: right;
+}
+table, input {
+  font-size: 24pt;
+  font-family: "Avenir Next", FreeUniversal, "Helvetica Neue", Helvetica,
+    sans-serif;
+}
+svg {
+  display: block;
+  position: absolute;
+  pointer-events: none;
+}
 footer {
   font-size: small;
   text-align: right;
@@ -70,8 +94,29 @@ void main() {
 }
     </script>
   </head>
-  <body class="full dark">
-    <canvas width="800" height="800"></canvas>
+  <body class="dark">
+    <canvas width="400" height="400"></canvas>
+    <svg></svg>
+    <table>
+      <tbody>
+        <tr>
+          <td>Hue</td>
+          <td><input type="text" id="h-in"></td>
+        </tr>
+        <tr>
+          <td>Saturation</td>
+          <td><input type="text" id="s-in"></td>
+        </tr>
+        <tr>
+          <td>Value</td>
+          <td><input type="text" id="v-in"></td>
+        </tr>
+        <tr>
+          <td id="color"/>
+          <td><input type="text" id="hex"></td>
+        </tr>
+      </tbody>
+    </table>
     <footer>
       Fri 7 Mar 2014, from the <a href="../">Flexo sketchbook</a>.<br>
       Check out the code <a href="https://github.com/julienq/flexo/tree/master/sketchbook/20140109-poly">on Github</a>!

@@ -1487,7 +1487,7 @@
     }
   };
 
-  // Convert a color from hsv space (hue in degrees, saturation and brightness
+  // Convert a color from hsv space (hue in radians, saturation and brightness
   // in the [0, 1] interval) to an RGB hex value
   flexo.hsv_to_hex = function (h, s, v) {
     return flexo.rgb_to_hex.apply(this, flexo.hsv_to_rgb(h, s, v));
