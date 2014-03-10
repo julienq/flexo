@@ -60,6 +60,15 @@
       };
   };
 
+  // Pseudo macro for read-only properties (replacing make_readonly)
+  flexo._get = function (object, name, get) {
+    Object.defineProperty(object, name, {
+      enumerable: true,
+      configurable: true,
+      get: flexo.funcify(get)
+    });
+  };
+
   // Simple format function for messages and templates. Use %0, %1... as slots
   // for parameters; %(n) can also be used to avoid possible ambiguities (e.g.
   // "x * 10 = %(0)0".) %% is also replaced by %. Null and undefined are
