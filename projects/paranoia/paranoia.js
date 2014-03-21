@@ -98,6 +98,22 @@
     }
   });
 
+  Object.defineProperty(paranoia.Location, "current", {
+    enumerable: true,
+    get: function () {
+      return this._current;
+    },
+    set: function (current) {
+      if (this._current !== current) {
+        if (this._current) {
+          flexo.notify(this, "leave");
+        }
+        this._current = current;
+        flexo.notify(this, "enter");
+      }
+    }
+  });
+
 
   // Item
   paranoia.Item = flexo._ext(paranoia.Named, {
@@ -108,6 +124,7 @@
     // Initialize an item with a name and an optional description.
     init: function (name, desc) {
       this._tags = {};
+      this._rules = [];
       if (!this.items.hasOwnProperty(name)) {
         this.items[name] = [];
       }
@@ -151,6 +168,12 @@
         }, this);
     },
 
+    apply_rules: function (target) {
+      console.log("Apply rule: %0%1"
+          .fmt(this.toString(flags.no_location),
+            target ? ", %0".fmt(target.toString(flags.no_location)) : ""));
+    },
+
     // String version of an item with its tags.
     toString: function (no_location) {
       return this.name + this.tags().map(function (tag) {
@@ -166,36 +189,52 @@
     // Keep track of all rules
     rules: [],
 
-    init: function (effect) {
-      this.effect = effect;
+    init: function () {
+      this._patterns = [];
+      this._conditions = [];
+      this._effects = [];
+      this._side_effects = [];
       this.rules.push(this);
       return Base.init.call(this);
     },
 
     toString: function () {
-      return " -> (some effect).";
+      return this._patterns.map(sub_pattern_string).join(", ") +
+        this._conditions.map(function (pattern) {
+          return "(%0)".fmt(sub_pattern_string(pattern));
+        }).join(" ") +
+        " -> " +
+        this._effects.map(sub_pattern_string).join(", ") +
+        this._side_effects.map(function (side_effect) {
+          return "; " + side_effect.toString();
+        }).join("") + ".";
     }
   });
 
+  function sub_pattern_string(pattern) {
+    return pattern[0] +
+      pattern[1].map(function (tag) { return "+" + tag; }).join("") +
+      pattern[2].map(function (tag) { return "-" + tag; }).join("") +
+      (pattern[3] ? "@" + pattern[3].name : "");
+  }
 
-  // An action rule is a rule with a single item on the left-hand side
-  var ActionRule = paranoia.ActionRule = flexo._ext(Rule, {
-
-    init: function (name, tags, untags, effect) {
-      this.name = name;
-      this.tags = tags || [];
-      this.untags = untags || [];
-      return Rule.init.call(this, effect);
-    },
-
-    toString: function () {
-      return this.name + this.tags.map(function (tag) {
-        return "+" + tag;
-      }).join("") + this.untags.map(function (tag) {
-        return "-" + tag;
-      }).join("") + Rule.toString.call(this);
-    }
-
+  ["patterns", "conditions", "effects"].forEach(function (pat) {
+    Rule[pat] = function () {
+      var patterns = this["_" + pat];
+      if (arguments.length === 0) {
+        return patterns;
+      }
+      flexo.foreach(arguments, function (pattern) {
+        if (!pattern[1]) {
+          pattern[1] = [];
+        }
+        if (!pattern[2]) {
+          pattern[2] = [];
+        }
+        patterns.push(pattern);
+      });
+      return this;
+    };
   });
 
 }());

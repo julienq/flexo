@@ -1,0 +1,56 @@
+body {
+  font-family: Univers, "Avenir Next", "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 24pt;
+  background-color: #4dbce9;
+  margin: 0;
+}
+
+#status {
+  background-color: #a61416;
+  color: #f8f9f0;
+  padding: 1rem;
+}
+
+.location {
+  background-color: #ff6a4d;
+  color: #333;
+  padding: 1rem;
+}
+
+#inventory {
+  background-color: #f8ca00;
+  color: #333;
+  padding: 0.5rem 1rem;
+}
+
+ul.items {
+  list-style-type: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+ul.items li {
+  display: inline-block;
+  padding: 2rem 1rem;
+  background-color: #0b486b;
+  color: #f8f9f0;
+  margin: 0 0.5rem;
+  cursor: default;
+}
+
+.moving {
+  opacity: 0.5;
+}
+
+.PC {
+  background-color: #774f38 !important;
+}
+
+.target {
+  background-color: #5eb26b !important;
+}
+
+a {
+  text-decoration: none;
+  color: #ff4040;
+}
