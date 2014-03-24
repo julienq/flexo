@@ -24,25 +24,32 @@ footer {
     <script>
 "use strict";
 
-var W = 51;
-var H = 37;
-var colors = flexo.urn(["#ff6a4d", "#0b486b", "#5eb26b", "#774f38", "#f8ca00",
-  "#9e0b46", "#a61416", "#222222", "#f8f9f0", "#4dbce9", "#06491d", "#f94179"]);
-document.body.style.backgroundImage = "linear-gradient(to bottom, %0, %1)"
-  .fmt(colors.pick(), colors.pick());
-
 var svg = document.querySelector("svg");
-svg.setAttribute("viewBox", "0 0 %0 %1".fmt(W * H, H * H));
+var numbers = flexo.urn(19, 23, 29, 31, 37, 41, 43, 47, 53, 59);
+var colors = flexo.urn("#ff6a4d", "#0b486b", "#5eb26b", "#774f38", "#f8ca00",
+  "#9e0b46", "#a61416", "#222222", "#f8f9f0", "#4dbce9", "#06491d", "#f94179");
 
-for (var y = 0; y < H; ++y) {
-  for (var x = 0; x < W; ++x) {
-    var sz = Math.max(1, flexo.random_number(y * 0.8, y * 1.25));
-    var x_ = x * H + (H - sz) / 2;
-    var y_ = y * H + (H - sz) / 2;
-    svg.appendChild(flexo.$rect({ x: x_, y: y_, width: sz, height: sz,
-      fill: colors.pick() }));
+function generate() {
+  var w = numbers.pick();
+  var h = numbers.pick();
+  document.body.style.backgroundImage = "linear-gradient(to bottom, %0, %1)"
+    .fmt(colors.pick(), colors.pick());
+  flexo.remove_children(svg);
+  svg.setAttribute("viewBox", "0 0 %0 %1".fmt(w * h, h * h));
+  for (var y = 0; y < h; ++y) {
+    for (var x = 0; x < w; ++x) {
+      var sz = Math.max(1, flexo.random_number(y * 0.8, y * 1.25));
+      var x_ = x * h + (h - sz) / 2;
+      var y_ = y * h + (h - sz) / 2;
+      svg.appendChild(flexo.$rect({ x: x_, y: y_, width: sz, height: sz,
+        fill: colors.pick() }));
+    }
   }
 }
+
+document.body.onclick = generate;
+generate();
+
 
     </script>
     <footer>

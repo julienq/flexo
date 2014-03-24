@@ -849,13 +849,20 @@
 
   // Create a new urn to pick from. The argument is the array of items in the
   // urn; items can be added or removed later.
-  flexo.urn = function (items) {
-    return Object.create(Urn).init(items);
+  flexo.urn = function () {
+    return Urn.init.apply(Object.create(Urn), arguments);
   };
 
   var Urn = {
     init: function (items) {
-      this.items = Array.isArray(items) && items || [];
+      flexo.make_property(this, "items", function (items) {
+        this._remaining = [];
+        delete this._last_pick;
+        return items;
+      });
+      this.items = arguments.length === 1 && Array.isArray(items) ? items :
+        flexo.slice(arguments);
+      this.__id = flexo.random_id();
       return this;
     },
 
@@ -908,11 +915,6 @@
     }
   };
 
-  flexo.make_property(Urn, "items", function (items_) {
-    this._remaining = [];
-    delete this._last_pick;
-    return items_;
-  });
   flexo.make_readonly(Urn, "remaining", function () {
     return this._remaining.length;
   });
