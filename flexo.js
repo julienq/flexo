@@ -60,6 +60,15 @@
       };
   };
 
+  // Pseudo macro for read-only properties (replacing make_readonly)
+  flexo._get = function (object, name, get) {
+    Object.defineProperty(object, name, {
+      enumerable: true,
+      configurable: true,
+      get: flexo.funcify(get)
+    });
+  };
+
   // Simple format function for messages and templates. Use %0, %1... as slots
   // for parameters; %(n) can also be used to avoid possible ambiguities (e.g.
   // "x * 10 = %(0)0".) %% is also replaced by %. Null and undefined are
@@ -840,13 +849,20 @@
 
   // Create a new urn to pick from. The argument is the array of items in the
   // urn; items can be added or removed later.
-  flexo.urn = function (items) {
-    return Object.create(Urn).init(items);
+  flexo.urn = function () {
+    return Urn.init.apply(Object.create(Urn), arguments);
   };
 
   var Urn = {
     init: function (items) {
-      this.items = Array.isArray(items) && items || [];
+      flexo.make_property(this, "items", function (items) {
+        this._remaining = [];
+        delete this._last_pick;
+        return items;
+      });
+      this.items = arguments.length === 1 && Array.isArray(items) ? items :
+        flexo.slice(arguments);
+      this.__id = flexo.random_id();
       return this;
     },
 
@@ -899,11 +915,6 @@
     }
   };
 
-  flexo.make_property(Urn, "items", function (items_) {
-    this._remaining = [];
-    delete this._last_pick;
-    return items_;
-  });
   flexo.make_readonly(Urn, "remaining", function () {
     return this._remaining.length;
   });
