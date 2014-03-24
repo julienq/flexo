@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Flexo Sketchbook — Mon 24 Mar 2014: Squares</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../sketch.css">
+    <script src="../../flexo.js"></script>
+    <style>
+svg {
+  display: block;
+  position: absolute;
+}
+footer {
+  font-size: small;
+  text-align: right;
+  position: absolute;
+  margin: 0;
+  bottom: 1rem;
+  right: 1rem;
+}
+    </style>
+  <body class="full">
+    <svg width="100%" height="100%"></svg>
+    <script>
+"use strict";
+
+var W = 51;
+var H = 37;
+var colors = flexo.urn(["#ff6a4d", "#0b486b", "#5eb26b", "#774f38", "#f8ca00",
+  "#9e0b46", "#a61416", "#222222", "#f8f9f0", "#4dbce9", "#06491d", "#f94179"]);
+document.body.style.backgroundImage = "linear-gradient(to bottom, %0, %1)"
+  .fmt(colors.pick(), colors.pick());
+
+var svg = document.querySelector("svg");
+svg.setAttribute("viewBox", "0 0 %0 %1".fmt(W * H, H * H));
+
+for (var y = 0; y < H; ++y) {
+  for (var x = 0; x < W; ++x) {
+    var sz = Math.max(1, flexo.random_number(y * 0.8, y * 1.25));
+    var x_ = x * H + (H - sz) / 2;
+    var y_ = y * H + (H - sz) / 2;
+    svg.appendChild(flexo.$rect({ x: x_, y: y_, width: sz, height: sz,
+      fill: colors.pick() }));
+  }
+}
+
+    </script>
+    <footer>
+      Mon 24 Mar 2014, from the <a href="../index.html#mar2014">Flexo
+        sketchbook</a>.<br>
+      Check out the code <a href="https://github.com/julienq/flexo/tree/master/sketchbook/20140324-squares">on Github</a>!
+    </footer>
+  </body>
+</html>
+
