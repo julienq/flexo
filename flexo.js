@@ -69,6 +69,7 @@
     });
   };
 
+
   // Simple format function for messages and templates. Use %0, %1... as slots
   // for parameters; %(n) can also be used to avoid possible ambiguities (e.g.
   // "x * 10 = %(0)0".) %% is also replaced by %. Null and undefined are
@@ -229,6 +230,18 @@
 
   // No-op function, returns nothing
   flexo.nop = function () {
+  };
+
+
+  // Convenient base object
+
+  flexo.Object = {
+    init: flexo.nop,
+    create: function () {
+      var object = Object.create(this);
+      this.init.apply(object, arguments);
+      return object;
+    }
   };
 
 
